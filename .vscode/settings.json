@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^py -m http\\.server 8000 --directory \"d:\\\\Klass-C Projects\\\\Klass-C Website\\\\Klass-C Frame\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
