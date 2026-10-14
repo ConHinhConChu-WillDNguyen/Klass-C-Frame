@@ -127,9 +127,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
       </div>
       <div class="strip" id="strip"></div>
       <div class="drop">
-        <span><strong>Kéo thả ảnh vào đây</strong>, dán (Ctrl+V) hoặc chọn nhiều ảnh cùng lúc. Mỗi ảnh giữ vị trí căn riêng.</span>
-        <button class="btn small" id="pickBtn" type="button">Chọn ảnh</button>
-        <input type="file" id="fileIn" accept="image/*" multiple hidden>
+        <span><strong>Kéo thả ảnh hoặc video vào đây</strong>, dán (Ctrl+V) hoặc chọn nhiều tệp cùng lúc. Mỗi media giữ vị trí căn riêng.</span>
+        <button class="btn small" id="pickBtn" type="button">Chọn media</button>
+        <input type="file" id="fileIn" accept="image/*,video/*" multiple hidden>
       </div>
     </section>
 
@@ -393,11 +393,14 @@ function wordmark(g,x,y,size,color,align){
 function upperVi(s){ return s.toLocaleUpperCase('vi'); }
 
 function drawPhoto(g,item,rx,ry,rw,rh){
-  const im=item.img, iw=im.naturalWidth||im.width, ih=im.naturalHeight||im.height;
+  const media = item.type === 'video' ? item.video : item.img;
+  if(!media) return {ox:0,oy:0};
+  const iw = media.videoWidth || media.naturalWidth || media.width || 1;
+  const ih = media.videoHeight || media.naturalHeight || media.height || 1;
   const sc=Math.max(rw/iw,rh/ih)*item.zoom, dw=iw*sc, dh=ih*sc;
   const ox=dw-rw, oy=dh-rh;
   const x=rx-ox/2+item.px*ox/2, y=ry-oy/2+item.py*oy/2;
-  g.save(); g.beginPath(); g.rect(rx,ry,rw,rh); g.clip(); g.drawImage(im,x,y,dw,dh); g.restore();
+  g.save(); g.beginPath(); g.rect(rx,ry,rw,rh); g.clip(); g.drawImage(media,x,y,dw,dh); g.restore();
   return {ox,oy};
 }
 
@@ -583,8 +586,7 @@ function draw(){ cancelAnimationFrame(raf); raf=requestAnimationFrame(()=>{
   lastGeom=render(ctx,f.w,f.h,it,f,S.frame,S.tone,true);
   $('mDim').textContent=`${f.w} × ${f.h}`; $('mRatio').textContent=f.ratio;
   $('sampleBadge').hidden=!it.sample;
-  $('zoom').value=Math.round(it.zoom*100); $('zoomVal').textContent=Math.round(it.zoom*100)+'%';
-});}
+  $('zoom').value=Math.round(it.zoom*100); $('zoomVal').textContent=Math.round(it.zoom*100)+'%';  if(it.type === 'video' && it.video && it.video.readyState >= 2){ requestAnimationFrame(draw); }});}
 
 function drawFrameThumbs(){
   const box=$('frames'); box.innerHTML='';
@@ -614,18 +616,22 @@ function drawStrip(){
   const box=$('strip'); box.innerHTML='';
   S.items.forEach((it,i)=>{
     const b=document.createElement('div'); b.className='thumb'; b.tabIndex=0; b.setAttribute('role','button');
-    b.setAttribute('aria-label',`Ảnh ${i+1}`); b.setAttribute('aria-current',i===S.cur);
-    const im=document.createElement('img'); im.src=it.img.src; im.alt='';
-    b.append(im);
-    if(it.sample){const t=document.createElement('span'); t.className='tag'; t.textContent='MẪU'; b.append(t);}
-    const x=document.createElement('button'); x.className='x'; x.type='button'; x.textContent='×'; x.setAttribute('aria-label','Xóa ảnh');
+    b.setAttribute('aria-label',`${it.type === 'video' ? 'Video' : 'Ảnh'} ${i+1}`); b.setAttribute('aria-current',i===S.cur);
+    if(it.type === 'video'){
+      const v=document.createElement('video'); v.src=it.video?.src || ''; v.muted=true; v.playsInline=true; v.loop=true; v.autoplay=true; v.controls=false; v.style.width='100%'; v.style.height='100%'; v.style.objectFit='cover'; b.append(v);
+      const t=document.createElement('span'); t.className='tag'; t.textContent='VIDEO'; b.append(t);
+    } else {
+      const im=document.createElement('img'); im.src=it.img.src; im.alt=''; b.append(im);
+      if(it.sample){const t=document.createElement('span'); t.className='tag'; t.textContent='MẪU'; b.append(t);}
+    }
+    const x=document.createElement('button'); x.className='x'; x.type='button'; x.textContent='×'; x.setAttribute('aria-label','Xóa media');
     x.onclick=e=>{e.stopPropagation(); S.items.splice(i,1); if(!S.items.length) S.items.push(sampleItem()); S.cur=Math.min(S.cur,S.items.length-1); refresh();};
     b.append(x);
     const sel=()=>{S.cur=i; refresh();};
     b.onclick=sel; b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();sel();}};
     box.append(b);
   });
-  const add=document.createElement('button'); add.className='add'; add.type='button'; add.textContent='+'; add.setAttribute('aria-label','Thêm ảnh');
+  const add=document.createElement('button'); add.className='add'; add.type='button'; add.textContent='+'; add.setAttribute('aria-label','Thêm media');
   add.onclick=()=>$('fileIn').click(); box.append(add);
 }
 function drawLogos(){
@@ -650,19 +656,38 @@ function drawLogos(){
 function refresh(){ drawStrip(); drawLogos(); drawFrameThumbs(); draw(); }
 
 /* ---------- loading images ---------- */
-function sampleItem(){ return {img:makeSample(),name:'mau',zoom:1,px:0,py:0,sample:true}; }
+function sampleItem(){ return {img:makeSample(),name:'mau',zoom:1,px:0,py:0,sample:true,type:'image'}; }
 function loadFiles(files){
-  const list=[...files].filter(f=>f.type.startsWith('image/')); if(!list.length) return;
+  const list=[...files].filter(f=>f.type.startsWith('image/')||f.type.startsWith('video/')); if(!list.length) return;
+  if(S.items.length && S.items.every(x=>x.sample)) S.items=[];
   let done=0, failed=0;
+  const finish=(label)=>{
+    done += label === 'ok' ? 1 : 0;
+    failed += label === 'fail' ? 1 : 0;
+    if(done + failed === list.length){
+      S.cur = Math.max(0, S.items.length - 1);
+      refresh();
+      const msg = list.length === 1 ? 'Đã thêm tệp mới' : `Đã thêm ${done} tệp`;
+      toast(`${msg}${failed ? ` · ${failed} tệp không đọc được` : ''}`);
+    }
+  };
   list.forEach(file=>{
-    const url=URL.createObjectURL(file); const img=new Image();
-    img.onload=()=>{
-      if(S.items.length && S.items.every(x=>x.sample)) S.items=[];
-      S.items.push({img,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0});
-      if(++done+failed===list.length){ S.cur=S.items.length-done; refresh(); toast(`Đã thêm ${done} ảnh`+(failed?` · ${failed} ảnh không đọc được`:'')); }
+    const add=(item)=>{ S.items.push(item); finish('ok'); };
+    if(file.type.startsWith('image/')){
+      const url=URL.createObjectURL(file); const img=new Image();
+      img.onload=()=>add({img,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'image'});
+      img.onerror=()=>{ finish('fail'); };
+      img.src=url;
+      return;
+    }
+    const url=URL.createObjectURL(file); const video=document.createElement('video');
+    video.src=url; video.muted=true; video.playsInline=true; video.loop=true; video.preload='auto';
+    video.onloadeddata=()=>{
+      video.play().catch(()=>{});
+      add({video,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'video'});
     };
-    img.onerror=()=>{ failed++; if(done+failed===list.length){ refresh(); toast(`${failed} ảnh không đọc được. Ảnh HEIC hãy đổi sang JPG/PNG trước.`);} };
-    img.src=url;
+    video.onerror=()=>{ finish('fail'); };
+    video.load();
   });
 }
 $('pickBtn').onclick=()=>$('fileIn').click();
