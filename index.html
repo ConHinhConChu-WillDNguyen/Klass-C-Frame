@@ -146,6 +146,21 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
       </div>
 
       <div class="sec">
+        <span class="lbl">Căn ảnh</span>
+        <div class="field"><label for="zoom">Phóng to <span id="zoomVal">100%</span></label><input type="range" id="zoom" min="100" max="300" value="100"></div>
+        <div class="row"><button class="btn small" type="button" id="resetBtn">Căn giữa lại</button><span class="hint">Kéo trực tiếp trên ảnh xem trước để đổi vị trí.</span></div>
+      </div>
+
+      <div class="sec">
+        <span class="lbl">Tải ảnh / video</span>
+        <div class="actions">
+          <button class="btn primary" type="button" id="dlOne">Tải media này</button>
+          <button class="btn" type="button" id="dlAll">Tải tất cả (.zip)</button>
+        </div>
+        <p class="hint" id="dlHint">Ảnh/video xuất dạng file gốc hoặc JPG chất lượng cao.</p>
+      </div>
+
+      <div class="sec">
         <span class="lbl">Kiểu khung</span>
         <div class="frames" id="frames"></div>
         <span class="lbl" style="margin-top:4px">Tông khung</span>
@@ -213,19 +228,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
         <p class="hint" id="qrHint">QR dẫn đến klass-c-wear.vercel.app, đã kiểm tra quét được.</p>
       </div>
 
-      <div class="sec">
-        <span class="lbl">Căn ảnh</span>
-        <div class="field"><label for="zoom">Phóng to <span id="zoomVal">100%</span></label><input type="range" id="zoom" min="100" max="300" value="100"></div>
-        <div class="row"><button class="btn small" type="button" id="resetBtn">Căn giữa lại</button><span class="hint">Kéo trực tiếp trên ảnh xem trước để đổi vị trí.</span></div>
-      </div>
-
-      <div class="sec">
-        <div class="actions">
-          <button class="btn primary" type="button" id="dlOne">Tải ảnh này</button>
-          <button class="btn" type="button" id="dlAll">Tải tất cả (.zip)</button>
-        </div>
-        <p class="hint" id="dlHint">Ảnh xuất dạng JPG chất lượng cao.</p>
-      </div>
     </aside>
   </div>
 </div>
@@ -349,34 +351,7 @@ const LOGOS = [
   official('kc-ngang-mono','Logo ngang · đơn sắc','ngang_monoDen','ngang_monoTrang',0.82,0,false),
   official('kc-slogan','Logo + slogan','slogan_den','slogan_kem',1.9,0.5,true),
   official('kc-slogan-mono','Logo + slogan · đơn sắc','slogan_monoDen','slogan_monoTrang',1.9,0.5,true),
-  official('kc-mono','Monogram K','mono_den','mono_kem',1.55,0.32,false),
-  {id:'didone', name:'Didone cổ điển',
-    w(g,s){ g.font=`600 ${s}px ${DISPLAY}`; return spacedW(g,'KLASS-C',s*0.12); },
-    d(g,x,y,s,c){ g.fillStyle=c; g.font=`600 ${s}px ${DISPLAY}`; spaced(g,'KLASS-C',x,y,s*0.12,'left'); }},
-  {id:'italic', name:'Nghiêng thanh lịch',
-    w(g,s){ g.font=`italic 500 ${s*1.18}px ${DISPLAY}`; return g.measureText('Klass-C').width; },
-    d(g,x,y,s,c){ g.fillStyle=c; g.font=`italic 500 ${s*1.18}px ${DISPLAY}`; g.textAlign='left'; g.fillText('Klass-C',x,y); }},
-  {id:'split', name:'Tách chữ C',
-    w(g,s){ g.font=`600 ${s}px ${DISPLAY}`; const a=spacedW(g,'KLASS',s*0.12); g.font=`italic 500 ${s*1.3}px ${DISPLAY}`; return a+s*0.62+g.measureText('C').width; },
-    d(g,x,y,s,c){ g.fillStyle=c; g.font=`600 ${s}px ${DISPLAY}`; const a=spaced(g,'KLASS',x,y,s*0.12,'left');
-      g.fillRect(x+a+s*0.28,y-s*0.86,Math.max(1,s*0.03),s*1.0);
-      g.font=`italic 500 ${s*1.3}px ${DISPLAY}`; g.textAlign='left'; g.fillText('C',x+a+s*0.62,y); }},
-  {id:'seal', name:'Huy hiệu KC',
-    w(g,s){ g.font=`700 ${s*0.42}px ${UI}`; return s*1.16+s*0.34+spacedW(g,'KLASS-C',s*0.13); },
-    d(g,x,y,s,c){ const r=s*0.58, cy=y-s*0.35;
-      g.strokeStyle=c; g.lineWidth=Math.max(1,s*0.035); g.beginPath(); g.arc(x+r,cy,r,0,Math.PI*2); g.stroke();
-      g.lineWidth=Math.max(0.6,s*0.014); g.beginPath(); g.arc(x+r,cy,r*0.84,0,Math.PI*2); g.stroke();
-      g.fillStyle=c; g.font=`600 ${s*0.5}px ${DISPLAY}`; g.textAlign='center'; g.fillText('KC',x+r,cy+s*0.175); g.textAlign='left';
-      g.font=`700 ${s*0.42}px ${UI}`; spaced(g,'KLASS-C',x+r*2+s*0.34,cy+s*0.15,s*0.13,'left'); }},
-  {id:'boxed', name:'Khung nhãn',
-    w(g,s){ g.font=`600 ${s*0.78}px ${DISPLAY}`; return spacedW(g,'KLASS-C',s*0.1)+s*0.9; },
-    d(g,x,y,s,c){ g.font=`600 ${s*0.78}px ${DISPLAY}`; const tw=spacedW(g,'KLASS-C',s*0.1), bw=tw+s*0.9, top=y-s*0.95, bh=s*1.24;
-      g.strokeStyle=c; g.lineWidth=Math.max(1,s*0.035); g.strokeRect(x,top,bw,bh);
-      g.lineWidth=Math.max(0.6,s*0.014); g.strokeRect(x+s*0.09,top+s*0.09,bw-s*0.18,bh-s*0.18);
-      g.fillStyle=c; spaced(g,'KLASS-C',x+s*0.45,top+bh/2+s*0.27,s*0.1,'left'); }},
-  {id:'modern', name:'Tối giản',
-    w(g,s){ g.font=`500 ${s*0.6}px ${UI}`; return spacedW(g,'KLASS-C',s*0.36); },
-    d(g,x,y,s,c){ g.fillStyle=c; g.font=`500 ${s*0.6}px ${UI}`; spaced(g,'KLASS-C',x,y-s*0.12,s*0.36,'left'); }}
+  official('kc-mono','Monogram K','mono_den','mono_kem',1.55,0.32,false)
 ];
 const logoById = id => LOGOS.find(l=>l.id===id)||LOGOS[0];
 
@@ -637,10 +612,7 @@ function drawStrip(){
 function drawLogos(){
   const box=$('logos'); box.innerHTML='';
   const bg = S.tone==='ink'? BRAND.ink : BRAND.cream, fg = S.tone==='ink'? BRAND.cream : BRAND.ink;
-  LOGOS.forEach((L,i)=>{
-    if(i===0 || (!L.official && LOGOS[i-1].official)){
-      const h=document.createElement('span'); h.className='logo-group'; h.textContent=L.official?'Logo chính thức':'Kiểu chữ thay thế'; box.append(h);
-    }
+  LOGOS.forEach((L)=>{
     const b=document.createElement('button'); b.type='button'; b.className='logo-opt'+(L.id==='kc-mono'?' wide':'');
     b.setAttribute('aria-pressed', !S.logo && S.logoStyle===L.id);
     const c=document.createElement('canvas'); c.width=360; c.height=120; const g=c.getContext('2d');
@@ -675,7 +647,7 @@ function loadFiles(files){
     const add=(item)=>{ S.items.push(item); finish('ok'); };
     if(file.type.startsWith('image/')){
       const url=URL.createObjectURL(file); const img=new Image();
-      img.onload=()=>add({img,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'image'});
+      img.onload=()=>add({img,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'image',file});
       img.onerror=()=>{ finish('fail'); };
       img.src=url;
       return;
@@ -684,7 +656,7 @@ function loadFiles(files){
     video.src=url; video.muted=true; video.playsInline=true; video.loop=true; video.preload='auto';
     video.onloadeddata=()=>{
       video.play().catch(()=>{});
-      add({video,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'video'});
+      add({video,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'video',file});
     };
     video.onerror=()=>{ finish('fail'); };
     video.load();
@@ -786,37 +758,54 @@ $('logoDl').onclick=async()=>{
 };
 
 /* ---------- export ---------- */
-function exportBlob(it){
-  return new Promise(res=>{ const f=S.fmt; const c=document.createElement('canvas'); c.width=f.w; c.height=f.h;
-    render(c.getContext('2d'),f.w,f.h,it,f,S.frame,S.tone,false); c.toBlob(b=>res({blob:b,canvas:c}),'image/jpeg',0.93); });
+function extFromName(name, fallback='jpg'){ const n=(name||'').toLowerCase(); const m=n.match(/\.(mp4|mov|webm|m4v|avi|mpeg|gif)$/); return m ? m[1] : fallback; }
+function mediaName(it,i){
+  const ext = it.type === 'video' ? extFromName(it.file?.name || it.name || 'video.mp4', 'mp4') : 'jpg';
+  return `klassc_${S.fmt.id}_${S.frame}_${String(i+1).padStart(2,'0')}${it.type === 'video' ? '.'+ext : '.jpg'}`;
 }
-function fname(it,i){ return `klassc_${S.fmt.id}_${S.frame}_${String(i+1).padStart(2,'0')}.jpg`; }
+function exportBlob(it){
+  if(it.type === 'video' && it.file){ return Promise.resolve({blob:it.file, canvas:null, type:'video'}); }
+  return new Promise(res=>{ const f=S.fmt; const c=document.createElement('canvas'); c.width=f.w; c.height=f.h;
+    render(c.getContext('2d'),f.w,f.h,it,f,S.frame,S.tone,false); c.toBlob(b=>res({blob:b,canvas:c,type:'image'}),'image/jpeg',0.93); });
+}
 let downloads=null;
 async function save(filename,data){
   if(!downloads){ return false; }
   try{ await downloads.save({filename,data}); toast('Đã lưu '+filename); return true; }
   catch(err){ if(err&&err.code==='declined'){toast('Đã hủy lưu'); return true;} if(err&&err.code==='rate_limited'){toast('Đang có hộp thoại lưu mở, thử lại sau giây lát'); return true;} return false; }
 }
-function showModal(canvases,type='image/jpeg'){
+function showModal(items){
   const m=$('modal'); m.innerHTML='';
-  const p=document.createElement('p'); p.textContent='Điện thoại: chạm giữ từng ảnh và chọn "Lưu ảnh". Máy tính: chuột phải → "Lưu hình ảnh".';
+  const p=document.createElement('p'); p.textContent='Điện thoại: chạm giữ từng tệp và chọn "Lưu". Máy tính: chuột phải → "Lưu hình ảnh/video".';
   const close=document.createElement('button'); close.className='btn primary'; close.type='button'; close.textContent='Đóng'; close.onclick=()=>{m.hidden=true; m.innerHTML='';};
-  m.append(p,close); canvases.forEach(c=>{const im=new Image(); im.src=c.toDataURL(type,.93); im.alt='Ảnh đã gắn khung'; if(type==='image/png') im.style.background='repeating-conic-gradient(#ccc 0 25%,#fff 0 50%) 0 0/20px 20px'; m.append(im);});
+  m.append(p,close);
+  items.forEach(item=>{
+    if(item.type==='video'){
+      const v=document.createElement('video'); v.src=URL.createObjectURL(item.blob); v.controls=true; v.playsInline=true; v.style.maxWidth='min(100%,520px)'; v.style.width='100%'; v.style.background='#000'; m.append(v);
+      return;
+    }
+    const c=item.canvas || item.img || item; const im=new Image(); im.src=c.toDataURL('image/jpeg',.93); im.alt='Ảnh đã gắn khung'; im.style.maxWidth='min(100%,520px)'; im.style.width='100%'; im.style.height='auto'; im.style.background='repeating-conic-gradient(#ccc 0 25%,#fff 0 50%) 0 0/20px 20px'; m.append(im);
+  });
   m.hidden=false;
 }
 $('dlOne').onclick=async()=>{
-  const it=S.items[S.cur]; const {blob,canvas}=await exportBlob(it);
-  if(!(await save(fname(it,S.cur),blob))) showModal([canvas]);
+  const it=S.items[S.cur]; const {blob,canvas,type}=await exportBlob(it);
+  if(it.type === 'video' && it.file){
+    if(!(await save(mediaName(it,S.cur),blob))) showModal([{type:'video', blob, canvas}]);
+    return;
+  }
+  if(!(await save(mediaName(it,S.cur),blob))) showModal([{type:'image', blob, canvas}]);
 };
 $('dlAll').onclick=async()=>{
   const btn=$('dlAll'); btn.disabled=true; btn.textContent='Đang xuất…';
   try{
     const outs=[]; for(let i=0;i<S.items.length;i++) outs.push(await exportBlob(S.items[i]));
     if(downloads && window.JSZip){
-      const zip=new JSZip(); outs.forEach((o,i)=>zip.file(fname(S.items[i],i),o.blob));
+      const zip=new JSZip(); outs.forEach((o,i)=>zip.file(mediaName(S.items[i],i),o.blob));
       const z=await zip.generateAsync({type:'blob'});
-      if(!(await save(`klassc_${S.fmt.id}_${S.items.length}-anh.zip`,z))) showModal(outs.map(o=>o.canvas));
-    } else showModal(outs.map(o=>o.canvas));
+      const zipName=`klassc_${S.fmt.id}_${S.items.length}-media.zip`;
+      if(!(await save(zipName,z))) showModal(outs.map(o=>({type:o.type==='video'?'video':'image', blob:o.blob, canvas:o.canvas}))); 
+    } else showModal(outs.map(o=>({type:o.type==='video'?'video':'image', blob:o.blob, canvas:o.canvas}))); 
   } finally { btn.disabled=false; btn.textContent='Tải tất cả (.zip)'; }
 };
 
