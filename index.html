@@ -31,6 +31,13 @@ header p{margin:0;color:var(--muted);font-size:13px;max-width:46ch}
 @media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
 .stage{background:var(--stage);border-radius:14px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:14px;position:relative}
 .stage.drag{outline:2px dashed var(--accent);outline-offset:-8px}
+.zoom-rail{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:2;padding:8px 8px 10px;border:1px solid rgba(58,42,32,.18);background:rgba(246,243,238,.72);backdrop-filter:blur(2px);border-radius:999px;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+.zoom-stack{position:relative;width:92px;height:156px;display:flex;align-items:center;justify-content:center}
+.zoom-rail label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:4px;margin-top:2px}
+.zoom-rail input{width:118px;height:20px;transform:rotate(-90deg);accent-color:var(--accent);margin:0;cursor:pointer;position:relative;z-index:1}
+.zoom-readout{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:62px;padding:4px 8px;border-radius:999px;background:rgba(34,28,24,.9);color:#f7f2ea;font-size:11px;font-weight:700;letter-spacing:.04em;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,.18);pointer-events:none;z-index:2;transition:top .08s ease}
+.zoom-readout::after{content:'';position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);width:8px;height:8px;background:rgba(34,28,24,.9);clip-path:polygon(50% 100%, 0 0, 100% 0);}
+.zoom-rail .zoom-value{display:none}
 #cv{display:block;max-width:100%;max-height:min(72vh,780px);width:auto;height:auto;box-shadow:0 10px 40px rgba(0,0,0,.18);cursor:grab;touch-action:none;background:#ddd}
 #cv:active{cursor:grabbing}
 .stage-meta{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
@@ -49,6 +56,15 @@ header p{margin:0;color:var(--muted);font-size:13px;max-width:46ch}
 .sec{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
 .sec:last-child{border-bottom:0}
 .lbl{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.mini-section{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--chip)}
+.mini-section summary{list-style:none;cursor:pointer;padding:12px 14px;font:700 12px var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;justify-content:space-between;user-select:none}
+.mini-section summary::-webkit-details-marker{display:none}
+.mini-section summary::after{content:'+';font-size:18px;line-height:1;color:var(--fg)}
+.mini-section[open] summary::after{content:'−'}
+.mini-section .mini-content{padding:0 12px 12px}
+.advanced-standalone{margin:0 0 12px;border:1px solid var(--line);border-radius:12px;background:var(--chip);padding:10px}
+.advanced-standalone .advanced-wrap{display:block;margin-top:8px}
+.advanced-standalone .advanced-wrap[hidden]{display:none}
 .tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--chip);border-radius:10px;padding:3px;gap:3px}
 .tabs button{border:0;background:transparent;color:var(--muted);font:600 13px var(--ui);padding:8px 4px;border-radius:8px;cursor:pointer}
 .tabs button[aria-pressed="true"]{background:var(--panel);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
@@ -87,6 +103,27 @@ textarea{font:500 14px var(--ui);color:var(--fg);background:var(--chip);border:1
 .tones{display:flex;gap:8px}
 .tone{flex:1;display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:transparent;color:var(--fg);font:600 13px var(--ui);cursor:pointer}
 .tone[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.filter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.filter-btn{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:8px 9px;background:transparent;color:var(--fg);font:600 12px var(--ui);cursor:pointer;text-align:left}
+.filter-btn[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.filter-swatch{width:22px;height:22px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.15);background:linear-gradient(135deg,#fef7ef,#d8c7aa)}
+.filter-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+.filter-row label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.filter-value{font-size:11px;font-weight:700;color:var(--fg);min-width:38px;text-align:right}
+.filter-levels{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.filter-level{border:1px solid var(--line);background:transparent;border-radius:8px;padding:6px 8px;color:var(--fg);font:700 11px var(--ui);cursor:pointer}
+.filter-level[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.advanced-toggle{margin-top:8px;width:100%}
+.advanced-wrap{display:none;margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--chip)}
+.advanced-wrap.open{display:block}
+.adjust-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.adjust-control{display:flex;flex-direction:column;gap:5px}
+.adjust-control label{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;font-weight:700;color:var(--muted)}
+.adjust-control label span{letter-spacing:.02em;text-transform:none}
+.adjust-meta{display:flex;align-items:center;gap:6px;min-width:0}
+.adjust-control label b{font-size:11px;color:var(--fg)}
+.adjust-reset{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;line-height:1}
+.adjust-reset:hover{border-color:var(--accent);color:var(--accent)}
 .sw{width:20px;height:20px;border-radius:50%;border:1px solid rgba(0,0,0,.2)}
 .field{display:flex;flex-direction:column;gap:5px}
 .field label{font-size:12px;font-weight:600}
@@ -122,8 +159,29 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
     <section>
       <div class="stage" id="stage">
         <span class="sample-badge" id="sampleBadge">Ảnh mẫu</span>
+        <div class="zoom-rail" aria-label="Phóng to ảnh">
+          <div class="zoom-stack">
+            <div class="zoom-readout" id="zoomReadout">100%</div>
+            <input type="range" id="zoom" min="100" max="300" value="100">
+          </div>
+          <label for="zoom">Zoom</label>
+        </div>
         <canvas id="cv" width="1080" height="1350" aria-label="Xem trước ảnh có khung Klass-C"></canvas>
         <div class="stage-meta"><span>Kích thước xuất <b id="mDim">1080 × 1350</b></span><span>Tỉ lệ <b id="mRatio">4:5</b></span><span>Kéo ảnh để căn vị trí</span></div>
+      </div>
+      <div class="advanced-standalone">
+        <button class="btn small advanced-toggle" type="button" id="advancedToggle">Thu gọn chỉnh cơ bản</button>
+        <div class="advanced-wrap open" id="advancedWrap">
+          <div class="adjust-grid">
+            <div class="adjust-control"><label for="adjExposure"><span>Mức sáng</span><span class="adjust-meta"><b id="adjExposureValue">0</b><button type="button" class="adjust-reset" data-reset="exposure" aria-label="Quay lại mức sáng" title="Đặt lại">↺</button></span></label><input id="adjExposure" type="range" min="-100" max="100" value="0"></div>
+            <div class="adjust-control"><label for="adjContrast"><span>Độ tương phản</span><span class="adjust-meta"><b id="adjContrastValue">0</b><button type="button" class="adjust-reset" data-reset="contrast" aria-label="Quay lại độ tương phản" title="Đặt lại">↺</button></span></label><input id="adjContrast" type="range" min="-100" max="100" value="0"></div>
+            <div class="adjust-control"><label for="adjHighlights"><span>Độ sáng vùng sáng</span><span class="adjust-meta"><b id="adjHighlightsValue">0</b><button type="button" class="adjust-reset" data-reset="highlights" aria-label="Quay lại độ sáng vùng sáng" title="Đặt lại">↺</button></span></label><input id="adjHighlights" type="range" min="-100" max="100" value="0"></div>
+            <div class="adjust-control"><label for="adjShadows"><span>Độ sáng vùng tối</span><span class="adjust-meta"><b id="adjShadowsValue">0</b><button type="button" class="adjust-reset" data-reset="shadows" aria-label="Quay lại độ sáng vùng tối" title="Đặt lại">↺</button></span></label><input id="adjShadows" type="range" min="-100" max="100" value="0"></div>
+            <div class="adjust-control"><label for="adjSaturation"><span>Độ bão hòa</span><span class="adjust-meta"><b id="adjSaturationValue">0</b><button type="button" class="adjust-reset" data-reset="saturation" aria-label="Quay lại độ bão hòa" title="Đặt lại">↺</button></span></label><input id="adjSaturation" type="range" min="-100" max="100" value="0"></div>
+            <div class="adjust-control"><label for="adjWarmth"><span>Nhiệt độ màu</span><span class="adjust-meta"><b id="adjWarmthValue">0</b><button type="button" class="adjust-reset" data-reset="warmth" aria-label="Quay lại nhiệt độ màu" title="Đặt lại">↺</button></span></label><input id="adjWarmth" type="range" min="-100" max="100" value="0"></div>
+            <div class="adjust-control" style="grid-column:1/-1;"><label for="adjVignette"><span>Viền tối</span><span class="adjust-meta"><b id="adjVignetteValue">0</b><button type="button" class="adjust-reset" data-reset="vignette" aria-label="Quay lại viền tối" title="Đặt lại">↺</button></span></label><input id="adjVignette" type="range" min="0" max="100" value="0"></div>
+          </div>
+        </div>
       </div>
       <div class="strip" id="strip"></div>
       <div class="drop">
@@ -134,22 +192,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
     </section>
 
     <aside class="panel">
-      <div class="sec">
-        <span class="lbl">Nền tảng</span>
-        <div class="tabs" role="group" aria-label="Nền tảng">
-          <button type="button" data-plat="ig" aria-pressed="true">Instagram</button>
-          <button type="button" data-plat="fb" aria-pressed="false">Facebook</button>
-          <button type="button" data-plat="tt" aria-pressed="false">TikTok</button>
+      <details class="mini-section">
+        <summary>Nền tảng</summary>
+        <div class="mini-content">
+          <div class="tabs" role="group" aria-label="Nền tảng">
+            <button type="button" data-plat="ig" aria-pressed="true">Instagram</button>
+            <button type="button" data-plat="fb" aria-pressed="false">Facebook</button>
+            <button type="button" data-plat="tt" aria-pressed="false">TikTok</button>
+          </div>
+          <div class="sizes" id="sizes"></div>
+          <label class="check"><input type="checkbox" id="safeChk"> Hiện vùng bị giao diện app che (chỉ khi xem trước)</label>
         </div>
-        <div class="sizes" id="sizes"></div>
-        <label class="check"><input type="checkbox" id="safeChk"> Hiện vùng bị giao diện app che (chỉ khi xem trước)</label>
-      </div>
-
-      <div class="sec">
-        <span class="lbl">Căn ảnh</span>
-        <div class="field"><label for="zoom">Phóng to <span id="zoomVal">100%</span></label><input type="range" id="zoom" min="100" max="300" value="100"></div>
-        <div class="row"><button class="btn small" type="button" id="resetBtn">Căn giữa lại</button><span class="hint">Kéo trực tiếp trên ảnh xem trước để đổi vị trí.</span></div>
-      </div>
+      </details>
 
       <div class="sec">
         <span class="lbl">Tải ảnh / video</span>
@@ -159,6 +213,24 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
         </div>
         <p class="hint" id="dlHint">Ảnh/video xuất dạng file gốc hoặc JPG chất lượng cao.</p>
       </div>
+
+      <details class="mini-section">
+        <summary>Bộ lọc màu</summary>
+        <div class="mini-content">
+          <div class="filter-grid" id="filters"></div>
+          <div class="filter-row">
+            <label for="filterStrength">Độ mạnh filter</label>
+            <span class="filter-value" id="filterStrengthValue">100%</span>
+          </div>
+          <div class="filter-levels" id="filterLevels">
+            <button type="button" class="filter-level" data-level="25">Nhẹ</button>
+            <button type="button" class="filter-level" data-level="65" aria-pressed="true">Vừa</button>
+            <button type="button" class="filter-level" data-level="100">Mạnh</button>
+          </div>
+          <input type="range" id="filterStrength" min="0" max="100" value="65">
+          <p class="hint">Chọn từ tone phim Kodak/Fujifilm phổ biến hoặc tone hiện đại sáng sạch, tối giản.</p>
+        </div>
+      </details>
 
       <div class="sec">
         <span class="lbl">Kiểu khung</span>
@@ -170,31 +242,35 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
         </div>
       </div>
 
-      <div class="sec">
-        <span class="lbl">Chữ trên khung</span>
-        <div class="field"><label for="tagSel">Câu nhận diện</label>
-          <select id="tagSel">
-            <option value="Class with Karacter">Class with Karacter</option>
-            <option value="Made for Good Taste">Made for Good Taste</option>
-            <option value="__custom">Câu khác…</option>
-          </select>
-          <input type="text" id="tagCustom" placeholder="Nhập câu riêng" hidden>
+      <details class="mini-section">
+        <summary>Chữ trên khung</summary>
+        <div class="mini-content">
+          <div class="field"><label for="tagSel">Câu nhận diện</label>
+            <select id="tagSel">
+              <option value="Class with Karacter">Class with Karacter</option>
+              <option value="Made for Good Taste">Made for Good Taste</option>
+              <option value="__custom">Câu khác…</option>
+            </select>
+            <input type="text" id="tagCustom" placeholder="Nhập câu riêng" hidden>
+          </div>
+          <div class="field"><label for="handleIn">Tên kênh / page</label><input type="text" id="handleIn" value="KlassCWear"></div>
+          <div class="field"><label for="noteIn">Ghi chú nhỏ (để trống nếu không cần)</label><input type="text" id="noteIn" value="Made for Good Taste"></div>
         </div>
-        <div class="field"><label for="handleIn">Tên kênh / page</label><input type="text" id="handleIn" value="KlassCWear"></div>
-        <div class="field"><label for="noteIn">Ghi chú nhỏ (để trống nếu không cần)</label><input type="text" id="noteIn" value="Made for Good Taste"></div>
-      </div>
+      </details>
 
-      <div class="sec">
-        <span class="lbl">Logo</span>
-        <div class="logos" id="logos" role="group" aria-label="Chọn logo"></div>
-        <div class="row">
-          <button class="btn small" type="button" id="logoDl">Tải logo đang chọn</button>
-          <button class="btn small" type="button" id="logoBtn">Dùng logo riêng</button>
-          <button class="btn small" type="button" id="logoClear" hidden>Bỏ logo riêng</button>
-          <input type="file" id="logoIn" accept="image/png,image/svg+xml,image/webp" hidden>
+      <details class="mini-section">
+        <summary>Kiểu logo</summary>
+        <div class="mini-content">
+          <div class="logos" id="logos" role="group" aria-label="Chọn logo"></div>
+          <div class="row">
+            <button class="btn small" type="button" id="logoDl">Tải logo đang chọn</button>
+            <button class="btn small" type="button" id="logoBtn">Dùng logo riêng</button>
+            <button class="btn small" type="button" id="logoClear" hidden>Bỏ logo riêng</button>
+            <input type="file" id="logoIn" accept="image/png,image/svg+xml,image/webp" hidden>
+          </div>
+          <p class="hint" id="logoHint">Logo tự đổi bản tối/sáng theo nền khung. Nút tải về cho file nền trong suốt (SVG với logo chính thức), màu theo tông khung đang chọn.</p>
         </div>
-        <p class="hint" id="logoHint">Logo tự đổi bản tối/sáng theo nền khung. Nút tải về cho file nền trong suốt (SVG với logo chính thức), màu theo tông khung đang chọn.</p>
-      </div>
+      </details>
 
       <div class="sec">
         <span class="lbl">Thông tin sản phẩm</span>
@@ -203,30 +279,26 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
         <div class="field"><label for="infoDesc">Mô tả ngắn</label><textarea id="infoDesc" rows="3"></textarea></div>
         <div class="info-rows" id="infoRows"></div>
         <button class="btn small" type="button" id="infoAdd">+ Thêm dòng</button>
-        <div class="field"><label>Vị trí khối thông tin</label>
-          <div class="pos" role="group" aria-label="Vị trí khối thông tin">
-            <button type="button" data-pos="tl">Trên trái</button><button type="button" data-pos="tr">Trên phải</button>
-            <button type="button" data-pos="bl">Dưới trái</button><button type="button" data-pos="br">Dưới phải</button>
-          </div>
-        </div>
         <p class="hint">Để trống ô nào thì dòng đó không hiện. Bấm × để xóa hẳn một dòng. Khối tự thu nhỏ chữ nếu nội dung dài, và luôn tránh logo, QR, vùng nút của app.</p>
       </div>
 
-      <div class="sec">
-        <span class="lbl">QR code</span>
-        <label class="check"><input type="checkbox" id="qrOn" checked> Hiện QR trên ảnh</label>
-        <div class="qr-row">
-          <canvas id="qrPrev" width="160" height="160" aria-label="QR đang dùng"></canvas>
-          <div class="field" style="flex:1">
-            <label for="qrUrl">Link khách sẽ mở khi quét</label>
-            <input type="text" id="qrUrl" value="https://klass-c-wear.vercel.app/" inputmode="url" spellcheck="false">
-            <div class="row"><button class="btn small" type="button" id="qrMake">Tạo QR từ link</button><button class="btn small" type="button" id="qrUp">Dùng ảnh QR</button></div>
-            <input type="file" id="qrIn" accept="image/*" hidden>
+      <details class="mini-section">
+        <summary>QR code</summary>
+        <div class="mini-content">
+          <label class="check"><input type="checkbox" id="qrOn" checked> Hiện QR trên ảnh</label>
+          <div class="qr-row">
+            <canvas id="qrPrev" width="160" height="160" aria-label="QR đang dùng"></canvas>
+            <div class="field" style="flex:1">
+              <label for="qrUrl">Link khách sẽ mở khi quét</label>
+              <input type="text" id="qrUrl" value="https://klass-c-wear.vercel.app/" inputmode="url" spellcheck="false">
+              <div class="row"><button class="btn small" type="button" id="qrMake">Tạo QR từ link</button><button class="btn small" type="button" id="qrUp">Dùng ảnh QR</button></div>
+              <input type="file" id="qrIn" accept="image/*" hidden>
+            </div>
           </div>
+          <div class="field"><label for="qrCap">Chữ dưới QR (để trống nếu không cần)</label><input type="text" id="qrCap" value="Quét để xem thêm"></div>
+          <p class="hint" id="qrHint">QR dẫn đến klass-c-wear.vercel.app, đã kiểm tra quét được.</p>
         </div>
-        <div class="field"><label for="qrCap">Chữ dưới QR (để trống nếu không cần)</label><input type="text" id="qrCap" value="Quét để xem thêm"></div>
-        <p class="hint" id="qrHint">QR dẫn đến klass-c-wear.vercel.app, đã kiểm tra quét được.</p>
-      </div>
+      </details>
 
     </aside>
   </div>
@@ -264,16 +336,29 @@ const FRAMES = [
   {id:'editorial',name:'Editorial'},
   {id:'label',name:'Nhãn may'}
 ];
+const FILTERS = [
+  {id:'original', name:'Nguyên bản', css:'none', swatch:'linear-gradient(135deg,#f7f0ea,#d7cfc4)', tint:'#ffffff', alpha:0},
+  {id:'portra', name:'Kodak Portra 400', css:'sepia(.16) saturate(1.2)', swatch:'linear-gradient(135deg,#d8b08b,#6d5a4e)', tint:'#c97d5d', alpha:.22},
+  {id:'gold', name:'Kodak Gold 200', css:'sepia(.22) saturate(1.4) hue-rotate(-8deg)', swatch:'linear-gradient(135deg,#f7d19d,#d65b36)', tint:'#d9a25c', alpha:.24},
+  {id:'ektar', name:'Kodak Ektar 100', css:'saturate(1.28) sepia(.12)', swatch:'linear-gradient(135deg,#dfe9c4,#8a8a59)', tint:'#a9b57b', alpha:.2},
+  {id:'pro400h', name:'Fuji Pro 400H', css:'saturate(1.18) hue-rotate(-10deg)', swatch:'linear-gradient(135deg,#f5d4b1,#8b6f5e)', tint:'#b77d5e', alpha:.2},
+  {id:'velvia', name:'Fuji Velvia', css:'saturate(1.5) hue-rotate(-8deg)', swatch:'linear-gradient(135deg,#3e7d7b,#e97339)', tint:'#2d6d7d', alpha:.26},
+  {id:'classic', name:'Classic Chrome', css:'saturate(.9) sepia(.08)', swatch:'linear-gradient(135deg,#d5d9d1,#6b5c51)', tint:'#73827b', alpha:.18},
+  {id:'bright', name:'Sáng hiện đại', css:'saturate(1.16)', swatch:'linear-gradient(135deg,#fff9f3,#d0e7ea)', tint:'#f9efe6', alpha:.12},
+  {id:'minimal', name:'Tối giản', css:'grayscale(.12) saturate(.8)', swatch:'linear-gradient(135deg,#dfe4e2,#5c5d5d)', tint:'#404040', alpha:.16}
+];
 
-const S = { plat:'ig', fmt:FORMATS.ig[1], frame:'signature', tone:'cream',
-  tagline:'Class with Karacter', handle:'KlassCWear', note:'Made for Good Taste',
+const S = { plat:'ig', fmt:FORMATS.ig[1], frame:'signature', tone:'cream', filter:'original', filterStrength:100,
+  adjust:{ exposure:0, contrast:0, highlights:0, shadows:0, saturation:0, warmth:0, vignette:0 },
+  advOpen:false, tagline:'Class with Karacter', handle:'KlassCWear', note:'Made for Good Taste',
   logo:null, logoStyle:'kc-ngang',
   info:{ on:true, pos:'tl', title:'Standard Kaki Pants',
     desc:'Quần kaki dáng rộng, thiết kế lệch biên tạo điểm nhấn nhẹ, form gọn gàng, dễ mặc và phù hợp sử dụng hằng ngày.',
     rows:[ {label:'Chất liệu', value:'Kaki (65% Cotton, 30% Polyester, 5% Spandex)'},
            {label:'Màu sắc', value:'Beige | Brown | Cacao'},
            {label:'Size', value:'M | L | XL | XXL'},
-           {label:'Lưu ý', value:'Màu thực tế có thể chênh nhẹ do ánh sáng khi chụp.'} ] },
+           {label:'Lưu ý', value:'Màu thực tế có thể chênh nhẹ do ánh sáng khi chụp.'} ],
+    dragX:0, dragY:0 },
   qr:{on:true, url:DEFAULT_QR_URL, matrix:DEFAULT_QR, caption:'Quét để xem thêm', img:null}, safe:false, items:[], cur:0 };
 
 const $ = id => document.getElementById(id);
@@ -367,16 +452,149 @@ function wordmark(g,x,y,size,color,align){
 }
 function upperVi(s){ return s.toLocaleUpperCase('vi'); }
 
+function clamp(value,min,max){ return Math.min(max, Math.max(min, value)); }
+function getFilterOverlay(){
+  const preset = FILTERS.find(f=>f.id===S.filter) || FILTERS[0];
+  const strength = clamp(S.filterStrength, 0, 100) / 100;
+  if(preset.id === 'original' || strength <= 0) return null;
+  const alpha = (preset.alpha ?? 0.18) * (0.25 + strength * 0.9);
+  return { tint:preset.tint || '#ffffff', alpha: Math.min(alpha, 0.72) };
+}
+function applyBaseAdjustmentsToImageData(imageData){
+  const data = imageData.data;
+  const exposure = clamp(S.adjust.exposure, -100, 100) / 100;
+  const contrast = clamp(S.adjust.contrast, -100, 100) / 100;
+  const saturation = clamp(1 + S.adjust.saturation / 100, 0, 2.4);
+  const warmth = clamp(S.adjust.warmth, -100, 100) / 100;
+  const highlights = clamp(S.adjust.highlights, -100, 100) / 100;
+  const shadows = clamp(S.adjust.shadows, -100, 100) / 100;
+  for(let i=0;i<data.length;i+=4){
+    let r = data[i];
+    let g = data[i+1];
+    let b = data[i+2];
+
+    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    const exposureMult = Math.pow(2, exposure / 1.5);
+    r *= exposureMult; g *= exposureMult; b *= exposureMult;
+
+    const contrastFactor = 1 + contrast * 1.8;
+    r = (r - 128) * contrastFactor + 128;
+    g = (g - 128) * contrastFactor + 128;
+    b = (b - 128) * contrastFactor + 128;
+
+    const satMul = saturation;
+    const satR = lum + (r - lum) * satMul;
+    const satG = lum + (g - lum) * satMul;
+    const satB = lum + (b - lum) * satMul;
+    r = satR; g = satG; b = satB;
+
+    if(highlights > 0){
+      const lift = highlights * 0.7;
+      r += (255 - r) * lift;
+      g += (255 - g) * lift;
+      b += (255 - b) * lift;
+    }
+    if(shadows < 0){
+      const darken = (-shadows) * 0.7;
+      r *= 1 - darken * 0.45;
+      g *= 1 - darken * 0.45;
+      b *= 1 - darken * 0.45;
+    }
+
+    if(warmth > 0){
+      r += warmth * 120;
+      g += warmth * 60;
+      b -= warmth * 60;
+    } else if(warmth < 0){
+      r += warmth * 40;
+      g += warmth * 10;
+      b -= warmth * 110;
+    }
+
+    data[i] = clamp(r,0,255);
+    data[i+1] = clamp(g,0,255);
+    data[i+2] = clamp(b,0,255);
+  }
+  return imageData;
+}
+function applyPhotoAdjustments(g,rx,ry,rw,rh){
+  const a=S.adjust; const warmth = a.warmth / 100;
+  const vignette = a.vignette / 100;
+  const hasTone = Math.abs(warmth) > 0.001 || vignette > 0.001 || a.highlights !== 0 || a.shadows !== 0;
+  if(!hasTone) return;
+  g.save();
+  if(Math.abs(warmth) > 0.001){
+    const warm = g.createLinearGradient(rx, ry, rx + rw, ry + rh);
+    warm.addColorStop(0, `rgba(255, 186, 120, ${Math.abs(warmth) * 0.18})`);
+    warm.addColorStop(0.5, `rgba(255, 200, 146, ${Math.abs(warmth) * 0.09})`);
+    warm.addColorStop(1, `rgba(78, 106, 184, ${Math.abs(warmth) * 0.12})`);
+    g.globalCompositeOperation = 'soft-light';
+    g.fillStyle = warm;
+    g.fillRect(rx, ry, rw, rh);
+    g.globalCompositeOperation = 'source-over';
+  }
+  if(a.highlights !== 0){
+    const top = g.createLinearGradient(rx, ry, rx, ry + rh * 0.42);
+    top.addColorStop(0, `rgba(255,255,255,${Math.max(0, a.highlights / 1000)})`);
+    top.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = top; g.fillRect(rx, ry, rw, rh * 0.42);
+  }
+  if(a.shadows !== 0){
+    const bottom = g.createLinearGradient(rx, ry + rh * 0.58, rx, ry + rh);
+    bottom.addColorStop(0, 'rgba(0,0,0,0)');
+    bottom.addColorStop(1, `rgba(20,16,10,${Math.max(0, -a.shadows / 1000)})`);
+    g.fillStyle = bottom; g.fillRect(rx, ry + rh * 0.58, rw, rh * 0.42);
+  }
+  if(vignette > 0.001){
+    const vignetteFill = g.createRadialGradient(rx + rw / 2, ry + rh / 2, Math.min(rw, rh) * 0.15, rx + rw / 2, ry + rh / 2, Math.max(rw, rh) * 0.8);
+    vignetteFill.addColorStop(0, 'rgba(0,0,0,0)');
+    vignetteFill.addColorStop(1, `rgba(0,0,0,${(vignette * 0.8).toFixed(3)})`);
+    g.fillStyle = vignetteFill; g.fillRect(rx, ry, rw, rh);
+  }
+  g.restore();
+}
 function drawPhoto(g,item,rx,ry,rw,rh){
   const media = item.type === 'video' ? item.video : item.img;
   if(!media) return {ox:0,oy:0};
   const iw = media.videoWidth || media.naturalWidth || media.width || 1;
   const ih = media.videoHeight || media.naturalHeight || media.height || 1;
-  const sc=Math.max(rw/iw,rh/ih)*item.zoom, dw=iw*sc, dh=ih*sc;
-  const ox=dw-rw, oy=dh-rh;
-  const x=rx-ox/2+item.px*ox/2, y=ry-oy/2+item.py*oy/2;
-  g.save(); g.beginPath(); g.rect(rx,ry,rw,rh); g.clip(); g.drawImage(media,x,y,dw,dh); g.restore();
-  return {ox,oy};
+  const scale = Math.max(rw / iw, rh / ih) * item.zoom;
+  const dw = iw * scale;
+  const dh = ih * scale;
+  const maxX = Math.max(0, dw - rw);
+  const maxY = Math.max(0, dh - rh);
+  const px = clamp(Number.isFinite(item.px) ? item.px : 0, -1, 1);
+  const py = clamp(Number.isFinite(item.py) ? item.py : 0, -1, 1);
+  const x = rx + (rw - dw) / 2 + px * maxX * 0.5;
+  const y = ry + (rh - dh) / 2 + py * maxY * 0.5;
+  const filter = getFilterOverlay();
+  const hasImageAdjust = [S.adjust.exposure, S.adjust.contrast, S.adjust.saturation, S.adjust.highlights, S.adjust.shadows, S.adjust.warmth].some(v => v !== 0);
+
+  const tmp = document.createElement('canvas');
+  tmp.width = Math.max(1, Math.round(dw));
+  tmp.height = Math.max(1, Math.round(dh));
+  const tg = tmp.getContext('2d');
+  tg.clearRect(0, 0, tmp.width, tmp.height);
+  tg.drawImage(media, 0, 0, iw, ih, 0, 0, tmp.width, tmp.height);
+
+  if(hasImageAdjust){
+    const img = tg.getImageData(0, 0, tmp.width, tmp.height);
+    applyBaseAdjustmentsToImageData(img);
+    tg.putImageData(img, 0, 0);
+  }
+
+  g.save();
+  g.beginPath(); g.rect(rx, ry, rw, rh); g.clip();
+  g.drawImage(tmp, x, y, dw, dh);
+  if(filter){
+    g.globalAlpha = filter.alpha;
+    g.globalCompositeOperation = 'soft-light';
+    g.fillStyle = filter.tint;
+    g.fillRect(rx,ry,rw,rh);
+  }
+  g.restore();
+  applyPhotoAdjustments(g,rx,ry,rw,rh);
+  return { ox: maxX, oy: maxY };
 }
 
 // QR sits on its own light tile with a quiet zone so it scans on any background.
@@ -405,6 +623,7 @@ function wrapRich(g,segs,maxW){
       const gap = x>0? sp : 0; line.push({t:w,font:sg.font,fill:sg.fill,x:x+gap}); x+=gap+ww; }); });
   if(line.length) lines.push(line); return lines;
 }
+let lastInfoBox = null;
 function infoHasContent(){ const I=S.info; return I.on && (I.title.trim()||I.desc.trim()||I.rows.some(r=>r.value.trim())); }
 // R = the free rectangle of the frame (no logo, QR or app UI inside); the card sits in the chosen corner of it.
 function drawInfo(g,R,u,tone){
@@ -426,12 +645,20 @@ function drawInfo(g,R,u,tone){
   let L=build(1);
   for(let i=0;i<3 && L.h>R.h;i++) L=build(Math.max(0.5,(L.h>0? R.h/L.h : 1)*(L.blocks.length? 0.98:1)*(L.u/u)));
   const x = I.pos[1]==='l'? R.x : R.x+R.w-L.w, y = I.pos[0]==='t'? R.y : R.y+R.h-L.h;
-  g.save(); g.shadowColor='rgba(0,0,0,.22)'; g.shadowBlur=24*u; g.shadowOffsetY=6*u; g.fillStyle=bg; g.fillRect(x,y,L.w,L.h); g.restore();
+  const px = x + (I.dragX || 0), py = y + (I.dragY || 0);
+  lastInfoBox = { x:px, y:py, w: L.w, h: L.h };
+  g.save(); g.shadowColor='rgba(0,0,0,.22)'; g.shadowBlur=24*u; g.shadowOffsetY=6*u; g.fillStyle=bg; g.fillRect(px,py,L.w,L.h); g.restore();
   g.save(); g.textBaseline='top'; g.textAlign='left';
   L.blocks.forEach(b=>{
-    if(b.rule){ g.fillStyle='#B8996A'; g.fillRect(x+L.pad,y+b.y,44*L.u,2*L.u); return; }
-    b.ls.forEach((ln,i)=>ln.forEach(wd=>{ g.font=wd.font; g.fillStyle=wd.fill; g.fillText(wd.t,x+L.pad+wd.x,y+b.y+i*b.lh+b.lh*0.12); }));
+    if(b.rule){ g.fillStyle='#B8996A'; g.fillRect(px+L.pad,py+b.y,44*L.u,2*L.u); return; }
+    b.ls.forEach((ln,i)=>ln.forEach(wd=>{ g.font=wd.font; g.fillStyle=wd.fill; g.fillText(wd.t,px+L.pad+wd.x,py+b.y+i*b.lh+b.lh*0.12); }));
   });
+  const closeSize = 30*u;
+  const closeX = px + L.w - closeSize - 10*u;
+  const closeY = py + 10*u;
+  g.fillStyle = dark ? 'rgba(17,12,9,.8)' : 'rgba(255,255,255,.84)';
+  g.beginPath(); g.roundRect? g.roundRect(closeX, closeY, closeSize, closeSize, 999) : g.rect(closeX, closeY, closeSize, closeSize); g.fill();
+  g.strokeStyle = dark ? 'rgba(239,230,214,.9)' : 'rgba(30,22,18,.8)'; g.lineWidth = 1.5*u; g.beginPath(); g.moveTo(closeX + 9*u, closeY + 9*u); g.lineTo(closeX + closeSize - 9*u, closeY + closeSize - 9*u); g.moveTo(closeX + closeSize - 9*u, closeY + 9*u); g.lineTo(closeX + 9*u, closeY + closeSize - 9*u); g.stroke();
   g.restore();
 }
 
@@ -553,15 +780,71 @@ function render(g,W,H,item,fmt,frame,tone,preview,opts={}){
   return geom;
 }
 
+function getCanvasPoint(e){
+  const rect = cv.getBoundingClientRect();
+  return { x:(e.clientX-rect.left)*(cv.width/rect.width), y:(e.clientY-rect.top)*(cv.height/rect.height) };
+}
+
 /* ---------- preview ---------- */
 let raf=0;
+function syncZoomReadout(){
+  const value = Number($('zoom').value || 100);
+  const bubble = $('zoomReadout');
+  const min = Number($('zoom').min || 100);
+  const max = Number($('zoom').max || 300);
+  const pct = (value - min) / (max - min || 1);
+  const top = 12 + pct * 120;
+  bubble.textContent = `${value}%`;
+  bubble.style.top = `${top}px`;
+}
 function draw(){ cancelAnimationFrame(raf); raf=requestAnimationFrame(()=>{
   const f=S.fmt; if(cv.width!==f.w||cv.height!==f.h){cv.width=f.w;cv.height=f.h;}
   const it=S.items[S.cur]; if(!it) return;
   lastGeom=render(ctx,f.w,f.h,it,f,S.frame,S.tone,true);
   $('mDim').textContent=`${f.w} × ${f.h}`; $('mRatio').textContent=f.ratio;
   $('sampleBadge').hidden=!it.sample;
-  $('zoom').value=Math.round(it.zoom*100); $('zoomVal').textContent=Math.round(it.zoom*100)+'%';  if(it.type === 'video' && it.video && it.video.readyState >= 2){ requestAnimationFrame(draw); }});}
+  $('zoom').value=Math.round(it.zoom*100); syncZoomReadout(); if(it.type === 'video' && it.video && it.video.readyState >= 2){ requestAnimationFrame(draw); }});}
+
+function syncFilterStrength(){
+  const strength = clamp(S.filterStrength, 0, 100);
+  $('filterStrength').value = strength;
+  $('filterStrengthValue').textContent = `${strength}%`;
+  document.querySelectorAll('.filter-level').forEach(btn => {
+    const selected = Number(btn.dataset.level) === strength;
+    btn.setAttribute('aria-pressed', String(selected));
+  });
+}
+function syncAdvancedPanel(){
+  const wrap=$('advancedWrap'); const btn=$('advancedToggle');
+  wrap.hidden = !S.advOpen; wrap.classList.toggle('open', S.advOpen);
+  btn.textContent = S.advOpen ? 'Thu gọn chỉnh cơ bản' : 'Chỉnh sửa cơ bản';
+  const keys = ['exposure','contrast','highlights','shadows','saturation','warmth','vignette'];
+  keys.forEach(key => {
+    const value = S.adjust[key];
+    const input = document.getElementById(`adj${key.charAt(0).toUpperCase() + key.slice(1)}`);
+    if(input){ input.value = value; }
+    const label = document.getElementById(`adj${key.charAt(0).toUpperCase() + key.slice(1)}Value`);
+    if(label){ label.textContent = value; }
+  });
+}
+function applyAdjustFromInput(key){
+  const input = document.getElementById(`adj${key.charAt(0).toUpperCase() + key.slice(1)}`);
+  if(!input) return;
+  S.adjust[key] = Number(input.value);
+  syncAdvancedPanel();
+  draw();
+}
+function drawFilters(){
+  const box=$('filters'); box.innerHTML='';
+  FILTERS.forEach(p=>{
+    const b=document.createElement('button'); b.type='button'; b.className='filter-btn'; b.setAttribute('aria-pressed',S.filter===p.id);
+    const sw=document.createElement('span'); sw.className='filter-swatch'; sw.style.background=p.swatch; sw.title=p.name;
+    const label=document.createElement('span'); label.textContent=p.name;
+    b.append(sw,label);
+    b.onclick=()=>{ S.filter=p.id; drawFilters(); draw(); };
+    box.append(b);
+  });
+}
 
 function drawFrameThumbs(){
   const box=$('frames'); box.innerHTML='';
@@ -625,7 +908,7 @@ function drawLogos(){
     box.append(b);
   });
 }
-function refresh(){ drawStrip(); drawLogos(); drawFrameThumbs(); draw(); }
+function refresh(){ drawStrip(); drawFilters(); drawLogos(); drawFrameThumbs(); draw(); }
 
 /* ---------- loading images ---------- */
 function sampleItem(){ return {img:makeSample(),name:'mau',zoom:1,px:0,py:0,sample:true,type:'image'}; }
@@ -672,17 +955,57 @@ document.addEventListener('paste',e=>{ const fs=[...(e.clipboardData?.items||[])
 
 /* ---------- drag to pan ---------- */
 let drag=null;
-cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId); drag={x:e.clientX,y:e.clientY};});
+let infoDrag = null;
+cv.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  const p = getCanvasPoint(e);
+  if(S.info.on && lastInfoBox){
+    const closeSize = 30 * (Math.min(cv.width, cv.height) / 1080);
+    const closeX = lastInfoBox.x + lastInfoBox.w - closeSize - 10 * (Math.min(cv.width, cv.height) / 1080);
+    const closeY = lastInfoBox.y + 10 * (Math.min(cv.width, cv.height) / 1080);
+    const inClose = p.x >= closeX && p.x <= closeX + closeSize && p.y >= closeY && p.y <= closeY + closeSize;
+    const inBox = p.x >= lastInfoBox.x && p.x <= lastInfoBox.x + lastInfoBox.w && p.y >= lastInfoBox.y && p.y <= lastInfoBox.y + lastInfoBox.h;
+    if(inClose){
+      S.info.on = false;
+      $('infoOn').checked = false;
+      draw();
+      return;
+    }
+    if(inBox){
+      cv.setPointerCapture(e.pointerId);
+      infoDrag = { startX:p.x, startY:p.y, startDragX:S.info.dragX || 0, startDragY:S.info.dragY || 0 };
+      return;
+    }
+  }
+  const it = S.items[S.cur];
+  cv.setPointerCapture(e.pointerId);
+  drag = {
+    x:e.clientX,
+    y:e.clientY,
+    startPx: it ? (Number.isFinite(it.px) ? it.px : 0) : 0,
+    startPy: it ? (Number.isFinite(it.py) ? it.py : 0) : 0
+  };
+});
 cv.addEventListener('pointermove',e=>{
-  if(!drag||!lastGeom) return; const it=S.items[S.cur]; const r=cv.getBoundingClientRect(); const k=cv.width/r.width;
-  const dx=(e.clientX-drag.x)*k, dy=(e.clientY-drag.y)*k; drag={x:e.clientX,y:e.clientY};
-  if(lastGeom.ox>0.5) it.px=Math.max(-1,Math.min(1,it.px+dx/(lastGeom.ox/2)));
-  if(lastGeom.oy>0.5) it.py=Math.max(-1,Math.min(1,it.py+dy/(lastGeom.oy/2)));
+  if(infoDrag){
+    const p = getCanvasPoint(e);
+    S.info.dragX = infoDrag.startDragX + (p.x - infoDrag.startX);
+    S.info.dragY = infoDrag.startDragY + (p.y - infoDrag.startY);
+    draw();
+    return;
+  }
+  if(!drag||!lastGeom) return;
+  const it=S.items[S.cur]; if(!it) return;
+  const r=cv.getBoundingClientRect(); const k=cv.width/r.width;
+  const dx=(e.clientX-drag.x)*k;
+  const dy=(e.clientY-drag.y)*k;
+  const panScale = Math.max(1, Math.max(cv.width, cv.height) * 0.8);
+  it.px = clamp(drag.startPx + dx / panScale, -1.2, 1.2);
+  it.py = clamp(drag.startPy + dy / panScale, -1.2, 1.2);
   draw();
 });
-['pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,()=>{drag=null;}));
-$('zoom').oninput=e=>{const it=S.items[S.cur]; it.zoom=e.target.value/100; draw();};
-$('resetBtn').onclick=()=>{const it=S.items[S.cur]; it.zoom=1; it.px=0; it.py=0; draw();};
+['pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,()=>{drag=null; infoDrag=null;}));
+$('zoom').oninput=e=>{const it=S.items[S.cur]; it.zoom=e.target.value/100; syncZoomReadout(); draw();};
 
 /* ---------- controls ---------- */
 document.querySelectorAll('[data-plat]').forEach(b=>b.onclick=()=>{
@@ -733,6 +1056,30 @@ $('qrUp').onclick=()=>$('qrIn').click();
 $('qrIn').onchange=e=>{ const f=e.target.files[0]; if(!f) return; const img=new Image();
   img.onload=()=>{ S.qr.img=img; $('qrHint').textContent='Đang dùng ảnh QR bạn tải lên.'; qrChanged(); };
   img.src=URL.createObjectURL(f); e.target.value=''; };
+$('filterStrength').oninput=e=>{ S.filterStrength = Number(e.target.value); syncFilterStrength(); draw(); };
+document.querySelectorAll('.filter-level').forEach(btn => {
+  btn.onclick = () => {
+    S.filterStrength = Number(btn.dataset.level);
+    syncFilterStrength();
+    draw();
+  };
+});
+document.querySelectorAll('.adjust-reset').forEach(btn => {
+  btn.onclick = () => {
+    const key = btn.dataset.reset;
+    S.adjust[key] = 0;
+    const input = document.getElementById(`adj${key.charAt(0).toUpperCase() + key.slice(1)}`);
+    if(input) input.value = 0;
+    syncAdvancedPanel();
+    draw();
+  };
+});
+$('advancedToggle').onclick=()=>{ S.advOpen = !S.advOpen; syncAdvancedPanel(); };
+['Exposure','Contrast','Highlights','Shadows','Saturation','Warmth','Vignette'].forEach(name => {
+  const key = name.charAt(0).toLowerCase() + name.slice(1);
+  const input = document.getElementById(`adj${name}`);
+  if(input){ input.oninput = () => applyAdjustFromInput(key); }
+});
 $('safeChk').onchange=e=>{S.safe=e.target.checked; draw();};
 $('tagSel').onchange=e=>{const c=e.target.value==='__custom'; $('tagCustom').hidden=!c; S.tagline=c?($('tagCustom').value||' '):e.target.value; if(c) $('tagCustom').focus(); drawFrameThumbs(); draw();};
 $('tagCustom').oninput=e=>{S.tagline=e.target.value||' '; drawFrameThumbs(); draw();};
@@ -814,6 +1161,7 @@ let tt=0; function toast(msg){ const t=$('toast'); t.textContent=msg; t.hidden=f
 /* ---------- boot ---------- */
 S.items.push(sampleItem());
 S.items[0].img.onload=()=>refresh();
+syncFilterStrength(); syncAdvancedPanel();
 drawSizes(); refresh(); drawQRPrev();
 Promise.all([
   document.fonts.load(`600 60px "Bodoni Moda"`), document.fonts.load(`italic 400 30px "Bodoni Moda"`),
