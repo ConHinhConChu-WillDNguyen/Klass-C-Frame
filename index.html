@@ -31,11 +31,11 @@ header p{margin:0;color:var(--muted);font-size:13px;max-width:46ch}
 @media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
 .stage{background:var(--stage);border-radius:14px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:14px;position:relative}
 .stage.drag{outline:2px dashed var(--accent);outline-offset:-8px}
-.zoom-rail{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:2;padding:8px 8px 10px;border:1px solid rgba(58,42,32,.18);background:rgba(246,243,238,.72);backdrop-filter:blur(2px);border-radius:999px;box-shadow:0 6px 16px rgba(0,0,0,.08)}
-.zoom-stack{position:relative;width:92px;height:156px;display:flex;align-items:center;justify-content:center}
-.zoom-rail label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:4px;margin-top:2px}
+.zoom-rail{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;z-index:2}
+.zoom-stack{position:relative;width:24px;height:156px;display:flex;align-items:center;justify-content:center}
+.zoom-rail label{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-shadow:0 0 3px rgba(255,255,255,.8)}
 .zoom-rail input{width:118px;height:20px;transform:rotate(-90deg);accent-color:var(--accent);margin:0;cursor:pointer;position:relative;z-index:1}
-.zoom-readout{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:62px;padding:4px 8px;border-radius:999px;background:rgba(34,28,24,.9);color:#f7f2ea;font-size:11px;font-weight:700;letter-spacing:.04em;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,.18);pointer-events:none;z-index:2;transition:top .08s ease}
+.zoom-readout{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:38px;padding:2px 5px;border-radius:999px;background:rgba(34,28,24,.85);color:#f7f2ea;font-size:10px;font-weight:700;text-align:center;pointer-events:none;z-index:2;transition:top .08s ease}
 .zoom-readout::after{content:'';position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);width:8px;height:8px;background:rgba(34,28,24,.9);clip-path:polygon(50% 100%, 0 0, 100% 0);}
 .zoom-rail .zoom-value{display:none}
 #cv{display:block;max-width:100%;max-height:min(72vh,780px);width:auto;height:auto;box-shadow:0 10px 40px rgba(0,0,0,.18);cursor:grab;touch-action:none;background:#ddd}
@@ -111,8 +111,13 @@ textarea{font:500 14px var(--ui);color:var(--fg);background:var(--chip);border:1
 .filter-row label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .filter-value{font-size:11px;font-weight:700;color:var(--fg);min-width:38px;text-align:right}
 .filter-levels{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
-.filter-level{border:1px solid var(--line);background:transparent;border-radius:8px;padding:6px 8px;color:var(--fg);font:700 11px var(--ui);cursor:pointer}
-.filter-level[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.filter-level,.blur-level{border:1px solid var(--line);background:transparent;border-radius:8px;padding:6px 8px;color:var(--fg);font:700 11px var(--ui);cursor:pointer}
+.filter-level[aria-pressed="true"],.blur-level[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.blur-tools{margin:12px 0;border:1px solid var(--line);border-radius:12px;background:var(--chip);padding:10px;display:flex;flex-direction:column;gap:8px}
+.blur-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.blur-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.blur-row.two{grid-template-columns:1fr 1fr}
+.blur-tools .filter-levels{margin-top:0}
 .advanced-toggle{margin-top:8px;width:100%}
 .advanced-wrap{display:none;margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--chip)}
 .advanced-wrap.open{display:block}
@@ -169,6 +174,24 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
         <canvas id="cv" width="1080" height="1350" aria-label="Xem trước ảnh có khung Klass-C"></canvas>
         <div class="stage-meta"><span>Kích thước xuất <b id="mDim">1080 × 1350</b></span><span>Tỉ lệ <b id="mRatio">4:5</b></span><span>Kéo ảnh để căn vị trí</span></div>
       </div>
+      <div class="blur-tools">
+        <div class="blur-head"><span class="lbl">Che mờ</span><span class="hint" id="blurCount">Chưa có vùng nào</span></div>
+        <div class="blur-row">
+          <button type="button" class="btn small" data-blur-add="circle">+ Tròn</button>
+          <button type="button" class="btn small" data-blur-add="square">+ Vuông</button>
+          <button type="button" class="btn small" data-blur-add="rect">+ Chữ nhật</button>
+        </div>
+        <div class="filter-levels" role="group" aria-label="Độ mờ">
+          <button type="button" class="blur-level" data-blur-level="light">Nhẹ</button>
+          <button type="button" class="blur-level" data-blur-level="medium" aria-pressed="true">Vừa</button>
+          <button type="button" class="blur-level" data-blur-level="strong">Mạnh</button>
+        </div>
+        <div class="blur-row two">
+          <button type="button" class="btn small" id="blurDel" disabled>Xóa vùng đang chọn</button>
+          <button type="button" class="btn small" id="blurClear" disabled>Xóa tất cả</button>
+        </div>
+        <p class="hint">Chạm vào vùng mờ để chọn, kéo để di chuyển, kéo nút góc dưới để phóng to / thu nhỏ, bấm × ở góc trên để xóa.</p>
+      </div>
       <div class="advanced-standalone">
         <button class="btn small advanced-toggle" type="button" id="advancedToggle">Thu gọn chỉnh cơ bản</button>
         <div class="advanced-wrap open" id="advancedWrap">
@@ -211,7 +234,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
           <button class="btn primary" type="button" id="dlOne">Tải media này</button>
           <button class="btn" type="button" id="dlAll">Tải tất cả (.zip)</button>
         </div>
-        <p class="hint" id="dlHint">Ảnh/video xuất dạng file gốc hoặc JPG chất lượng cao.</p>
+        <p class="hint" id="dlHint">Ảnh xuất JPG chất lượng cao. Video được quay lại kèm khung, vùng mờ và tiếng gốc nên mất đúng bằng thời lượng video; giữ tab này mở trong lúc xuất.</p>
       </div>
 
       <details class="mini-section">
@@ -282,6 +305,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
         <p class="hint">Để trống ô nào thì dòng đó không hiện. Bấm × để xóa hẳn một dòng. Khối tự thu nhỏ chữ nếu nội dung dài, và luôn tránh logo, QR, vùng nút của app.</p>
       </div>
 
+      <div class="sec">
+        <span class="lbl">Đồng bộ nhiều thiết bị</span>
+        <div class="field"><label for="syncUrl">Supabase URL</label><input type="text" id="syncUrl" placeholder="https://xxxxx.supabase.co"></div>
+        <div class="field"><label for="syncKey">Anon key</label><input type="text" id="syncKey" placeholder="Khóa công khai Supabase"></div>
+        <div class="field"><label for="syncDevice">Tên thiết bị</label><input type="text" id="syncDevice" value="PC-01"></div>
+        <div class="row">
+          <button class="btn small" type="button" id="syncConnect">Kết nối</button>
+          <button class="btn small primary" type="button" id="syncPush">Đồng bộ</button>
+        </div>
+        <p class="hint" id="syncStatus">Chưa kết nối. Cần Supabase để đồng bộ ảnh giữa điện thoại và máy tính.</p>
+      </div>
+
       <details class="mini-section">
         <summary>QR code</summary>
         <div class="mini-content">
@@ -348,6 +383,8 @@ const FILTERS = [
   {id:'minimal', name:'Tối giản', css:'grayscale(.12) saturate(.8)', swatch:'linear-gradient(135deg,#dfe4e2,#5c5d5d)', tint:'#404040', alpha:.16}
 ];
 
+const MEDIA_STORAGE_KEY = 'klassc-frame-studio-media-v1';
+const SYNC_CONFIG_KEY = 'klassc-sync-config-v1';
 const S = { plat:'ig', fmt:FORMATS.ig[1], frame:'signature', tone:'cream', filter:'original', filterStrength:100,
   adjust:{ exposure:0, contrast:0, highlights:0, shadows:0, saturation:0, warmth:0, vignette:0 },
   advOpen:false, tagline:'Class with Karacter', handle:'KlassCWear', note:'Made for Good Taste',
@@ -359,9 +396,177 @@ const S = { plat:'ig', fmt:FORMATS.ig[1], frame:'signature', tone:'cream', filte
            {label:'Size', value:'M | L | XL | XXL'},
            {label:'Lưu ý', value:'Màu thực tế có thể chênh nhẹ do ánh sáng khi chụp.'} ],
     dragX:0, dragY:0 },
-  qr:{on:true, url:DEFAULT_QR_URL, matrix:DEFAULT_QR, caption:'Quét để xem thêm', img:null}, safe:false, items:[], cur:0 };
+  qr:{on:true, url:DEFAULT_QR_URL, matrix:DEFAULT_QR, caption:'Quét để xem thêm', img:null}, safe:false, items:[], cur:0,
+  blurLevel:'medium', blurSel:null };
 
 const $ = id => document.getElementById(id);
+
+function mediaFromBlob(blob, type, name){
+  return new Promise((resolve, reject) => {
+    const file = new File([blob], name || `media.${type === 'video' ? 'mp4' : 'jpg'}`, { type: blob.type || (type === 'video' ? 'video/mp4' : 'image/jpeg') });
+    if(type === 'image'){
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => resolve({ img, name: file.name.replace(/\.[^.]+$/, ''), zoom:1, px:0, py:0, type:'image', file, restored:true });
+      img.onerror = () => reject(new Error('Image load failed'));
+      img.src = url;
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    video.src = url;
+    video.muted = true;
+    video.playsInline = true;
+    video.loop = true;
+    video.preload = 'auto';
+    video.onloadeddata = () => {
+      video.play().catch(()=>{});
+      resolve({ video, name: file.name.replace(/\.[^.]+$/, ''), zoom:1, px:0, py:0, type:'video', file, restored:true });
+    };
+    video.onerror = () => reject(new Error('Video load failed'));
+    video.load();
+  });
+}
+function readPersistedMedia(){
+  try {
+    const raw = localStorage.getItem(MEDIA_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    return [];
+  }
+}
+function readSyncConfig(){
+  try {
+    const raw = localStorage.getItem(SYNC_CONFIG_KEY);
+    return raw ? JSON.parse(raw) : { url:'', key:'', device:'PC-01' };
+  } catch (err) {
+    return { url:'', key:'', device:'PC-01' };
+  }
+}
+function writeSyncConfig(cfg){
+  localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(cfg));
+}
+function getDeviceId(){
+  const existing = localStorage.getItem('klassc-device-id');
+  if(existing) return existing;
+  const next = `device-${(crypto?.randomUUID?.() || String(Date.now())).replace(/[^a-zA-Z0-9_-]/g,'')}`;
+  localStorage.setItem('klassc-device-id', next);
+  return next;
+}
+function setSyncStatus(text, ok=true){
+  const el=$('syncStatus'); if(el){ el.textContent=text; el.style.color = ok ? 'var(--muted)' : 'var(--danger)'; }
+}
+async function saveMediaRecord(item){
+  if(!item || !item.file || !('localStorage' in window)) return null;
+  try {
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Read file for persistence failed'));
+      reader.readAsDataURL(item.file);
+    });
+    const id = item.storageId || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const records = readPersistedMedia();
+    const next = records.filter(r => r.id !== id).concat([{ id, type:item.type, name:item.name || item.file.name, dataUrl, createdAt:Date.now() }]);
+    localStorage.setItem(MEDIA_STORAGE_KEY, JSON.stringify(next.slice(-8)));
+    item.storageId = id;
+    return id;
+  } catch (err) {
+    return null;
+  }
+}
+async function deleteMediaRecord(id){
+  if(!id || !('localStorage' in window)) return;
+  try {
+    const records = readPersistedMedia().filter(r => r.id !== id);
+    localStorage.setItem(MEDIA_STORAGE_KEY, JSON.stringify(records));
+  } catch (err) {}
+}
+async function restorePersistedMedia(){
+  if(!('localStorage' in window)) return [];
+  try {
+    const records = readPersistedMedia();
+    const items = [];
+    for(const record of records){
+      try {
+        const blob = await (await fetch(record.dataUrl)).blob();
+        const item = await mediaFromBlob(blob, record.type, record.name || 'media');
+        item.storageId = record.id;
+        items.push(item);
+      } catch (err) {}
+    }
+    return items;
+  } catch (err) {
+    return [];
+  }
+}
+async function syncMediaToCloud(){
+  const cfg = readSyncConfig();
+  if(!cfg.url || !cfg.key){
+    setSyncStatus('Thiếu Supabase URL hoặc anon key. Nhập thông tin ở phần Đồng bộ nhiều thiết bị.', false);
+    return false;
+  }
+  const device = cfg.device || getDeviceId();
+  const payload = {
+    device_id: device,
+    updated_at: new Date().toISOString(),
+    items: readPersistedMedia()
+  };
+  try {
+    const res = await fetch(`${cfg.url.replace(/\/$/, '')}/rest/v1/media_sessions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': cfg.key,
+        'Authorization': `Bearer ${cfg.key}`,
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({ device_id: device, payload, updated_at: payload.updated_at })
+    });
+    if(!res.ok){
+      const text = await res.text();
+      setSyncStatus(`Không thể đồng bộ: ${text.slice(0,120) || 'lỗi server'}`, false);
+      return false;
+    }
+    setSyncStatus(`Đã đồng bộ lên cloud cho thiết bị ${device}.`);
+    return true;
+  } catch (err) {
+    setSyncStatus('Lỗi khi đồng bộ. Kiểm tra URL và key Supabase.', false);
+    return false;
+  }
+}
+async function pullMediaFromCloud(){
+  const cfg = readSyncConfig();
+  if(!cfg.url || !cfg.key){
+    setSyncStatus('Thiếu Supabase URL hoặc anon key. Nhập thông tin ở phần Đồng bộ nhiều thiết bị.', false);
+    return false;
+  }
+  try {
+    const res = await fetch(`${cfg.url.replace(/\/$/, '')}/rest/v1/media_sessions?select=payload,updated_at,device_id&device_id=neq.${encodeURIComponent(getDeviceId())}` , {
+      headers: { 'apikey': cfg.key, 'Authorization': `Bearer ${cfg.key}`, 'Accept': 'application/json' }
+    });
+    if(!res.ok) {
+      const text = await res.text();
+      setSyncStatus(`Không lấy được dữ liệu cloud: ${text.slice(0,120) || 'lỗi server'}`, false);
+      return false;
+    }
+    const rows = await res.json();
+    if(rows && rows.length){
+      const newest = rows.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
+      if(newest?.payload?.items?.length) {
+        localStorage.setItem(MEDIA_STORAGE_KEY, JSON.stringify(newest.payload.items));
+        setSyncStatus('Đã tải dữ liệu từ thiết bị khác về máy này.');
+        window.location.reload();
+        return true;
+      }
+    }
+    setSyncStatus('Không có dữ liệu mới từ thiết bị khác.');
+    return true;
+  } catch (err) {
+    setSyncStatus('Lỗi khi tải dữ liệu cloud.', false);
+    return false;
+  }
+}
 const cv = $('cv'), ctx = cv.getContext('2d');
 let lastGeom = null;
 
@@ -553,6 +758,8 @@ function applyPhotoAdjustments(g,rx,ry,rw,rh){
   }
   g.restore();
 }
+// One scratch canvas per destination canvas, reused across frames (video export redraws every frame).
+const PHOTO_TMP = new WeakMap();
 function drawPhoto(g,item,rx,ry,rw,rh){
   const media = item.type === 'video' ? item.video : item.img;
   if(!media) return {ox:0,oy:0};
@@ -570,10 +777,11 @@ function drawPhoto(g,item,rx,ry,rw,rh){
   const filter = getFilterOverlay();
   const hasImageAdjust = [S.adjust.exposure, S.adjust.contrast, S.adjust.saturation, S.adjust.highlights, S.adjust.shadows, S.adjust.warmth].some(v => v !== 0);
 
-  const tmp = document.createElement('canvas');
-  tmp.width = Math.max(1, Math.round(dw));
-  tmp.height = Math.max(1, Math.round(dh));
-  const tg = tmp.getContext('2d');
+  let tmp = PHOTO_TMP.get(g.canvas);
+  if(!tmp){ tmp = document.createElement('canvas'); PHOTO_TMP.set(g.canvas, tmp); }
+  const tw = Math.max(1, Math.round(dw)), th = Math.max(1, Math.round(dh));
+  if(tmp.width !== tw || tmp.height !== th){ tmp.width = tw; tmp.height = th; }
+  const tg = tmp.getContext('2d', { willReadFrequently:true });
   tg.clearRect(0, 0, tmp.width, tmp.height);
   tg.drawImage(media, 0, 0, iw, ih, 0, 0, tmp.width, tmp.height);
 
@@ -583,9 +791,11 @@ function drawPhoto(g,item,rx,ry,rw,rh){
     tg.putImageData(img, 0, 0);
   }
 
+  const img = { x, y, w:dw, h:dh };
   g.save();
   g.beginPath(); g.rect(rx, ry, rw, rh); g.clip();
   g.drawImage(tmp, x, y, dw, dh);
+  if(item.blurs?.length) drawBlurs(g, tmp, item, img);
   if(filter){
     g.globalAlpha = filter.alpha;
     g.globalCompositeOperation = 'soft-light';
@@ -594,7 +804,38 @@ function drawPhoto(g,item,rx,ry,rw,rh){
   }
   g.restore();
   applyPhotoAdjustments(g,rx,ry,rw,rh);
-  return { ox: maxX, oy: maxY };
+  return { ox: maxX, oy: maxY, img, rect:{ x:rx, y:ry, w:rw, h:rh } };
+}
+
+/* ---------- blur regions ---------- */
+// Regions are stored as fractions of the photo itself, so they stay on the face while the photo is panned or zoomed.
+const BLUR_LEVELS = { light:{f:.05,min:6}, medium:{f:.1,min:12}, strong:{f:.2,min:22} };
+// Safari has no canvas `filter`; fall back to a downscale/upscale blur there.
+const CANVAS_FILTER = (() => { try{ const c=document.createElement('canvas'); c.width=c.height=9; const g=c.getContext('2d'); g.filter='blur(2px)'; g.fillStyle='#000'; g.fillRect(4,4,1,1); return g.getImageData(2,4,1,1).data[3]>0; }catch(e){ return false; } })();
+function blurRadius(level,w,h,u){ const L=BLUR_LEVELS[level]||BLUR_LEVELS.medium; return Math.max(L.min*u, Math.min(w,h)*L.f); }
+function blurBoxes(item,img){ return (item.blurs||[]).map(b=>({ b, x:img.x+b.x*img.w, y:img.y+b.y*img.h, w:b.w*img.w, h:b.h*img.h })); }
+function blurShape(g,r,shape){
+  g.beginPath();
+  if(shape==='circle') g.ellipse(r.x+r.w/2, r.y+r.h/2, r.w/2, r.h/2, 0, 0, Math.PI*2);
+  else g.rect(r.x, r.y, r.w, r.h);
+}
+function drawBlurs(g,src,item,img){
+  const u=Math.min(g.canvas.width,g.canvas.height)/1080;
+  blurBoxes(item,img).forEach(r=>{
+    const rad=blurRadius(r.b.level,r.w,r.h,u), m=Math.ceil(rad*2);
+    const ww=Math.max(1,Math.ceil(r.w+m*2)), wh=Math.max(1,Math.ceil(r.h+m*2));
+    const work=document.createElement('canvas'); work.width=ww; work.height=wh; const wg=work.getContext('2d');
+    const ox=img.x-r.x+m, oy=img.y-r.y+m;
+    if(CANVAS_FILTER){ wg.filter=`blur(${rad}px)`; wg.drawImage(src,ox,oy,img.w,img.h); }
+    else {
+      wg.drawImage(src,ox,oy,img.w,img.h);
+      const small=document.createElement('canvas');
+      small.width=Math.max(2,Math.round(ww/rad*1.5)); small.height=Math.max(2,Math.round(wh/rad*1.5));
+      const sg=small.getContext('2d'); sg.imageSmoothingQuality='high'; sg.drawImage(work,0,0,small.width,small.height);
+      wg.clearRect(0,0,ww,wh); wg.imageSmoothingQuality='high'; wg.drawImage(small,0,0,ww,wh);
+    }
+    g.save(); blurShape(g,r,r.b.shape); g.clip(); g.drawImage(work,r.x-m,r.y-m); g.restore();
+  });
 }
 
 // QR sits on its own light tile with a quiet zone so it scans on any background.
@@ -626,7 +867,7 @@ function wrapRich(g,segs,maxW){
 let lastInfoBox = null;
 function infoHasContent(){ const I=S.info; return I.on && (I.title.trim()||I.desc.trim()||I.rows.some(r=>r.value.trim())); }
 // R = the free rectangle of the frame (no logo, QR or app UI inside); the card sits in the chosen corner of it.
-function drawInfo(g,R,u,tone){
+function drawInfo(g,R,u,tone,preview){
   if(!infoHasContent() || R.w<120*u || R.h<120*u) return;
   const I=S.info, dark=tone==='ink';
   const bg = dark? 'rgba(43,33,27,.93)' : 'rgba(244,239,230,.94)';
@@ -653,6 +894,7 @@ function drawInfo(g,R,u,tone){
     if(b.rule){ g.fillStyle='#B8996A'; g.fillRect(px+L.pad,py+b.y,44*L.u,2*L.u); return; }
     b.ls.forEach((ln,i)=>ln.forEach(wd=>{ g.font=wd.font; g.fillStyle=wd.fill; g.fillText(wd.t,px+L.pad+wd.x,py+b.y+i*b.lh+b.lh*0.12); }));
   });
+  if(!preview){ g.restore(); return; } // the close button is an editing control, never part of the export
   const closeSize = 30*u;
   const closeX = px + L.w - closeSize - 10*u;
   const closeY = py + 10*u;
@@ -764,7 +1006,7 @@ function render(g,W,H,item,fmt,frame,tone,preview,opts={}){
     infoR={x:m,y:ty+34*u,w:W-2*m-rOff,h:labLow-34*u-(ty+34*u)};
   }
 
-  if(infoR && !opts.noInfo) drawInfo(g,infoR,u,tone);
+  if(infoR && !opts.noInfo) drawInfo(g,infoR,u,tone,preview);
 
   if(preview && S.safe && fmt.safe){
     g.save(); g.fillStyle='rgba(220,60,40,.22)'; g.strokeStyle='rgba(220,60,40,.9)'; g.lineWidth=3*u; g.setLineDash([12*u,8*u]);
@@ -787,6 +1029,70 @@ function getCanvasPoint(e){
 
 /* ---------- preview ---------- */
 let raf=0;
+// Canvas pixels per CSS pixel, so handles stay finger-sized however small the preview is shown.
+function uiScale(){ const r=cv.getBoundingClientRect(); return r.width? cv.width/r.width : 1; }
+function blurHandles(r,k){
+  const s=28*k, fit=(x,y)=>({ x:clamp(x-s/2,0,cv.width-s), y:clamp(y-s/2,0,cv.height-s), s });
+  return { del:fit(r.x+r.w,r.y), size:fit(r.x+r.w,r.y+r.h) };
+}
+function drawBlurOverlay(it){
+  if(!lastGeom?.img || !it.blurs?.length) return;
+  const k=uiScale();
+  blurBoxes(it,lastGeom.img).forEach(r=>{
+    const sel=r.b===S.blurSel;
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,.55)'; ctx.shadowBlur=3*k;
+    ctx.strokeStyle=sel?'#fff':'rgba(255,255,255,.7)'; ctx.lineWidth=(sel?2.5:1.5)*k; ctx.setLineDash(sel?[]:[6*k,4*k]);
+    blurShape(ctx,r,r.b.shape); ctx.stroke();
+    if(sel && r.b.shape==='circle'){ ctx.lineWidth=1*k; ctx.setLineDash([3*k,3*k]); ctx.strokeRect(r.x,r.y,r.w,r.h); }
+    ctx.restore();
+    if(!sel) return;
+    const h=blurHandles(r,k);
+    [[h.del,'#B4432F'],[h.size,'#fff']].forEach(([q,bg])=>{
+      ctx.save(); ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=4*k; ctx.fillStyle=bg;
+      ctx.beginPath(); ctx.arc(q.x+q.s/2,q.y+q.s/2,q.s/2,0,Math.PI*2); ctx.fill(); ctx.restore();
+    });
+    const c=h.del.s*0.22;
+    ctx.save(); ctx.lineCap='round'; ctx.lineWidth=2.2*k;
+    let cx=h.del.x+h.del.s/2, cy=h.del.y+h.del.s/2; ctx.strokeStyle='#fff';
+    ctx.beginPath(); ctx.moveTo(cx-c,cy-c); ctx.lineTo(cx+c,cy+c); ctx.moveTo(cx+c,cy-c); ctx.lineTo(cx-c,cy+c); ctx.stroke();
+    cx=h.size.x+h.size.s/2; cy=h.size.y+h.size.s/2; ctx.strokeStyle='#221C18';
+    ctx.beginPath(); ctx.moveTo(cx-c,cy-c); ctx.lineTo(cx+c,cy+c);
+    ctx.moveTo(cx+c,cy+c-c*0.9); ctx.lineTo(cx+c,cy+c); ctx.lineTo(cx+c-c*0.9,cy+c);
+    ctx.moveTo(cx-c,cy-c+c*0.9); ctx.lineTo(cx-c,cy-c); ctx.lineTo(cx-c+c*0.9,cy-c); ctx.stroke();
+    ctx.restore();
+  });
+}
+function hitBlur(p){
+  const it=S.items[S.cur]; if(!it?.blurs?.length || !lastGeom?.img) return null;
+  const boxes=blurBoxes(it,lastGeom.img), selBox=boxes.find(r=>r.b===S.blurSel);
+  if(selBox){
+    const h=blurHandles(selBox,uiScale()), near=q=>Math.hypot(p.x-(q.x+q.s/2),p.y-(q.y+q.s/2))<=q.s*0.8;
+    if(near(h.del)) return {mode:'del', r:selBox};
+    if(near(h.size)) return {mode:'size', r:selBox};
+  }
+  for(let i=boxes.length-1;i>=0;i--){ const r=boxes[i]; if(p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h) return {mode:'move', r}; }
+  return null;
+}
+function syncBlurUi(){
+  const it=S.items[S.cur], n=it?.blurs?.length||0;
+  if(S.blurSel && !it?.blurs?.includes(S.blurSel)) S.blurSel=null;
+  const level=S.blurSel? S.blurSel.level : S.blurLevel;
+  document.querySelectorAll('[data-blur-level]').forEach(b=>b.setAttribute('aria-pressed', b.dataset.blurLevel===level));
+  $('blurDel').disabled=!S.blurSel; $('blurClear').disabled=!n;
+  $('blurCount').textContent = n? `${n} vùng${S.blurSel?' · đang chọn 1':''}` : 'Chưa có vùng nào';
+}
+function addBlur(shape){
+  const it=S.items[S.cur]; if(!it || !lastGeom?.img) return;
+  const R=lastGeom.rect, img=lastGeom.img, n=it.blurs?.length||0;
+  const s=Math.min(R.w,R.h)*0.3, w=shape==='rect'? s*1.5 : s, h=s;
+  const cx=R.x+R.w/2+(n%4)*s*0.2, cy=R.y+R.h/2+(n%4)*s*0.2;
+  const b={ shape, level:S.blurLevel, x:(cx-w/2-img.x)/img.w, y:(cy-h/2-img.y)/img.h, w:w/img.w, h:h/img.h };
+  (it.blurs ||= []).push(b); S.blurSel=b; syncBlurUi(); drawFrameThumbs(); draw();
+}
+function removeBlur(b){
+  const it=S.items[S.cur]; if(!it?.blurs) return;
+  it.blurs=it.blurs.filter(x=>x!==b); if(S.blurSel===b) S.blurSel=null; syncBlurUi(); drawFrameThumbs(); draw();
+}
 function syncZoomReadout(){
   const value = Number($('zoom').value || 100);
   const bubble = $('zoomReadout');
@@ -801,6 +1107,7 @@ function draw(){ cancelAnimationFrame(raf); raf=requestAnimationFrame(()=>{
   const f=S.fmt; if(cv.width!==f.w||cv.height!==f.h){cv.width=f.w;cv.height=f.h;}
   const it=S.items[S.cur]; if(!it) return;
   lastGeom=render(ctx,f.w,f.h,it,f,S.frame,S.tone,true);
+  drawBlurOverlay(it);
   $('mDim').textContent=`${f.w} × ${f.h}`; $('mRatio').textContent=f.ratio;
   $('sampleBadge').hidden=!it.sample;
   $('zoom').value=Math.round(it.zoom*100); syncZoomReadout(); if(it.type === 'video' && it.video && it.video.readyState >= 2){ requestAnimationFrame(draw); }});}
@@ -883,7 +1190,7 @@ function drawStrip(){
       if(it.sample){const t=document.createElement('span'); t.className='tag'; t.textContent='MẪU'; b.append(t);}
     }
     const x=document.createElement('button'); x.className='x'; x.type='button'; x.textContent='×'; x.setAttribute('aria-label','Xóa media');
-    x.onclick=e=>{e.stopPropagation(); S.items.splice(i,1); if(!S.items.length) S.items.push(sampleItem()); S.cur=Math.min(S.cur,S.items.length-1); refresh();};
+    x.onclick=async e=>{e.stopPropagation(); const removed = S.items[i]; if(removed && removed.storageId) await deleteMediaRecord(removed.storageId); S.items.splice(i,1); if(!S.items.length) S.items.push(sampleItem()); S.cur=Math.min(S.cur,S.items.length-1); refresh();};
     b.append(x);
     const sel=()=>{S.cur=i; refresh();};
     b.onclick=sel; b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();sel();}};
@@ -908,7 +1215,7 @@ function drawLogos(){
     box.append(b);
   });
 }
-function refresh(){ drawStrip(); drawFilters(); drawLogos(); drawFrameThumbs(); draw(); }
+function refresh(){ drawStrip(); drawFilters(); drawLogos(); drawFrameThumbs(); syncBlurUi(); draw(); }
 
 /* ---------- loading images ---------- */
 function sampleItem(){ return {img:makeSample(),name:'mau',zoom:1,px:0,py:0,sample:true,type:'image'}; }
@@ -926,8 +1233,8 @@ function loadFiles(files){
       toast(`${msg}${failed ? ` · ${failed} tệp không đọc được` : ''}`);
     }
   };
-  list.forEach(file=>{
-    const add=(item)=>{ S.items.push(item); finish('ok'); };
+  list.forEach(async file=>{
+    const add=async (item)=>{ S.items.push(item); await saveMediaRecord(item); finish('ok'); };
     if(file.type.startsWith('image/')){
       const url=URL.createObjectURL(file); const img=new Image();
       img.onload=()=>add({img,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'image',file});
@@ -956,9 +1263,20 @@ document.addEventListener('paste',e=>{ const fs=[...(e.clipboardData?.items||[])
 /* ---------- drag to pan ---------- */
 let drag=null;
 let infoDrag = null;
+let blurDrag = null;
 cv.addEventListener('pointerdown',e=>{
   e.preventDefault();
   const p = getCanvasPoint(e);
+  const hb = hitBlur(p);
+  if(hb){
+    if(hb.mode==='del'){ removeBlur(hb.r.b); return; }
+    S.blurSel = hb.r.b; syncBlurUi();
+    cv.setPointerCapture(e.pointerId);
+    blurDrag = { mode:hb.mode, b:hb.r.b, sx:p.x, sy:p.y, x:hb.r.x, y:hb.r.y, w:hb.r.w, h:hb.r.h };
+    draw();
+    return;
+  }
+  if(S.blurSel){ S.blurSel = null; syncBlurUi(); draw(); }
   if(S.info.on && lastInfoBox){
     const closeSize = 30 * (Math.min(cv.width, cv.height) / 1080);
     const closeX = lastInfoBox.x + lastInfoBox.w - closeSize - 10 * (Math.min(cv.width, cv.height) / 1080);
@@ -987,6 +1305,17 @@ cv.addEventListener('pointerdown',e=>{
   };
 });
 cv.addEventListener('pointermove',e=>{
+  if(blurDrag && lastGeom?.img){
+    const p = getCanvasPoint(e), d = blurDrag, img = lastGeom.img;
+    const dx = p.x - d.sx, dy = p.y - d.sy, min = 24 * uiScale();
+    let x = d.x, y = d.y, w = d.w, h = d.h;
+    if(d.mode === 'move'){ x += dx; y += dy; }
+    else if(d.b.shape === 'rect'){ w = Math.max(min, d.w + dx); h = Math.max(min, d.h + dy); }
+    else { w = h = Math.max(min, d.w + (dx + dy) / 2); }
+    d.b.x = (x - img.x) / img.w; d.b.y = (y - img.y) / img.h; d.b.w = w / img.w; d.b.h = h / img.h;
+    draw();
+    return;
+  }
   if(infoDrag){
     const p = getCanvasPoint(e);
     S.info.dragX = infoDrag.startDragX + (p.x - infoDrag.startX);
@@ -1004,7 +1333,18 @@ cv.addEventListener('pointermove',e=>{
   it.py = clamp(drag.startPy + dy / panScale, -1.2, 1.2);
   draw();
 });
-['pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,()=>{drag=null; infoDrag=null;}));
+['pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,()=>{ if(blurDrag) drawFrameThumbs(); drag=null; infoDrag=null; blurDrag=null; }));
+document.querySelectorAll('[data-blur-add]').forEach(b=>b.onclick=()=>addBlur(b.dataset.blurAdd));
+document.querySelectorAll('[data-blur-level]').forEach(b=>b.onclick=()=>{
+  S.blurLevel = b.dataset.blurLevel;
+  if(S.blurSel){ S.blurSel.level = S.blurLevel; drawFrameThumbs(); }
+  syncBlurUi(); draw();
+});
+$('blurDel').onclick=()=>{ if(S.blurSel) removeBlur(S.blurSel); };
+$('blurClear').onclick=()=>{ const it=S.items[S.cur]; if(!it) return; it.blurs=[]; S.blurSel=null; syncBlurUi(); drawFrameThumbs(); draw(); };
+document.addEventListener('keydown',e=>{
+  if((e.key==='Delete'||e.key==='Backspace') && S.blurSel && !e.target.closest('input,textarea,select')){ e.preventDefault(); removeBlur(S.blurSel); }
+});
 $('zoom').oninput=e=>{const it=S.items[S.cur]; it.zoom=e.target.value/100; syncZoomReadout(); draw();};
 
 /* ---------- controls ---------- */
@@ -1081,6 +1421,19 @@ $('advancedToggle').onclick=()=>{ S.advOpen = !S.advOpen; syncAdvancedPanel(); }
   if(input){ input.oninput = () => applyAdjustFromInput(key); }
 });
 $('safeChk').onchange=e=>{S.safe=e.target.checked; draw();};
+$('syncConnect').onclick=()=>{
+  const cfg = {
+    url: $('syncUrl').value.trim(),
+    key: $('syncKey').value.trim(),
+    device: $('syncDevice').value.trim() || getDeviceId()
+  };
+  writeSyncConfig(cfg);
+  setSyncStatus(cfg.url && cfg.key ? `Đã lưu cấu hình cho ${cfg.device}. Bạn có thể đồng bộ.` : 'Cần nhập Supabase URL và anon key để bật đồng bộ.', !!(cfg.url && cfg.key));
+};
+$('syncPush').onclick=async()=>{
+  await syncMediaToCloud();
+  await pullMediaFromCloud();
+};
 $('tagSel').onchange=e=>{const c=e.target.value==='__custom'; $('tagCustom').hidden=!c; S.tagline=c?($('tagCustom').value||' '):e.target.value; if(c) $('tagCustom').focus(); drawFrameThumbs(); draw();};
 $('tagCustom').oninput=e=>{S.tagline=e.target.value||' '; drawFrameThumbs(); draw();};
 $('handleIn').oninput=e=>{S.handle=e.target.value; drawFrameThumbs(); draw();};
@@ -1106,14 +1459,80 @@ $('logoDl').onclick=async()=>{
 
 /* ---------- export ---------- */
 function extFromName(name, fallback='jpg'){ const n=(name||'').toLowerCase(); const m=n.match(/\.(mp4|mov|webm|m4v|avi|mpeg|gif)$/); return m ? m[1] : fallback; }
-function mediaName(it,i){
-  const ext = it.type === 'video' ? extFromName(it.file?.name || it.name || 'video.mp4', 'mp4') : 'jpg';
-  return `klassc_${S.fmt.id}_${S.frame}_${String(i+1).padStart(2,'0')}${it.type === 'video' ? '.'+ext : '.jpg'}`;
+function mediaName(it,i,ext){
+  ext = ext || (it.type === 'video' ? extFromName(it.file?.name || it.name || 'video.mp4', 'mp4') : 'jpg');
+  return `klassc_${S.fmt.id}_${S.frame}_${String(i+1).padStart(2,'0')}.${ext}`;
 }
-function exportBlob(it){
-  if(it.type === 'video' && it.file){ return Promise.resolve({blob:it.file, canvas:null, type:'video'}); }
+// MP4 first (Safari, recent Chrome/Edge), WebM where MP4 recording is unavailable (Firefox, older Chrome).
+const VIDEO_MIMES = ['video/mp4;codecs=avc1.640028,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2','video/mp4',
+  'video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+function pickVideoMime(){
+  if(!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) return null;
+  return VIDEO_MIMES.find(t=>{ try{ return MediaRecorder.isTypeSupported(t); }catch(e){ return false; } }) || null;
+}
+let audioCtx = null;
+// Must run inside the click handler: browsers only start audio from a user gesture.
+function primeAudio(){
+  try{ audioCtx ||= new (window.AudioContext||window.webkitAudioContext)(); audioCtx.resume?.(); }catch(e){ audioCtx = null; }
+}
+// Plays a hidden copy of the video in real time, draws every frame through render() (frame, blur, filters, info card),
+// and records the canvas together with the original sound.
+function exportVideo(it,onProgress){
+  return new Promise((resolve,reject)=>{
+    const mime = pickVideoMime(), f = S.fmt;
+    const c = document.createElement('canvas'); c.width = f.w; c.height = f.h; const g = c.getContext('2d');
+    const url = URL.createObjectURL(it.file);
+    const v = document.createElement('video'); v.src = url; v.playsInline = true; v.preload = 'auto'; v.loop = false;
+    const stream = c.captureStream(30);
+    let src = null, silent = false;
+    if(audioCtx){
+      try{
+        src = audioCtx.createMediaElementSource(v); const dest = audioCtx.createMediaStreamDestination();
+        src.connect(dest); dest.stream.getAudioTracks().forEach(t=>stream.addTrack(t)); // not routed to speakers: export is silent for the user
+      }catch(e){ src = null; }
+    }
+    if(!src){ v.muted = true; silent = true; }
+    const item = { ...it, video:v };
+    const paint = () => { if(v.readyState >= 2) render(g,f.w,f.h,item,f,S.frame,S.tone,false); };
+    const rec = new MediaRecorder(stream, { mimeType:mime, videoBitsPerSecond:10000000, audioBitsPerSecond:192000 });
+    const chunks = []; rec.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
+    let raf = 0, done = false;
+    const loop = () => { if(done) return; paint(); onProgress?.(v.duration ? Math.min(1, v.currentTime / v.duration) : 0); raf = requestAnimationFrame(loop); };
+    const cleanup = () => {
+      done = true; cancelAnimationFrame(raf);
+      stream.getTracks().forEach(t=>t.stop()); try{ src?.disconnect(); }catch(e){}
+      v.pause(); v.removeAttribute('src'); v.load(); URL.revokeObjectURL(url);
+    };
+    const fail = err => { cleanup(); reject(err); };
+    rec.onstop = () => {
+      cleanup(); onProgress?.(1);
+      resolve({ blob:new Blob(chunks,{ type:mime.split(';')[0] }), ext:mime.startsWith('video/mp4') ? 'mp4' : 'webm', silent });
+    };
+    rec.onerror = e => fail(e.error || new Error('MediaRecorder error'));
+    v.onended = () => { paint(); setTimeout(()=>{ if(rec.state !== 'inactive') rec.stop(); }, 200); };
+    v.onerror = () => fail(new Error('Video load failed'));
+    v.addEventListener('loadeddata', async () => {
+      v.currentTime = 0; paint(); rec.start(500); loop();
+      try{ await v.play(); }
+      catch(e){
+        // Autoplay with sound refused (mostly iOS): record without sound rather than not at all.
+        v.muted = true; silent = true;
+        try{ await v.play(); }
+        catch(e2){ rec.onstop = null; if(rec.state !== 'inactive') rec.stop(); fail(e2); }
+      }
+    }, { once:true });
+    v.load();
+  });
+}
+async function exportBlob(it,onProgress){
+  if(it.type === 'video' && it.file){
+    if(!pickVideoMime()){ toast('Trình duyệt này không quay được video, đang tải file gốc'); return {blob:it.file, canvas:null, type:'video'}; }
+    const out = await exportVideo(it,onProgress);
+    if(out.silent) toast('Trình duyệt chặn tiếng nên video xuất ra không có âm thanh');
+    return { blob:out.blob, canvas:null, type:'video', ext:out.ext };
+  }
   return new Promise(res=>{ const f=S.fmt; const c=document.createElement('canvas'); c.width=f.w; c.height=f.h;
-    render(c.getContext('2d'),f.w,f.h,it,f,S.frame,S.tone,false); c.toBlob(b=>res({blob:b,canvas:c,type:'image'}),'image/jpeg',0.93); });
+    render(c.getContext('2d'),f.w,f.h,it,f,S.frame,S.tone,false); c.toBlob(b=>res({blob:b,canvas:c,type:'image',ext:'jpg'}),'image/jpeg',0.93); });
 }
 let downloads=null;
 async function save(filename,data){
@@ -1135,32 +1554,62 @@ function showModal(items){
   });
   m.hidden=false;
 }
+const pct = p => `${Math.round(p*100)}%`;
 $('dlOne').onclick=async()=>{
-  const it=S.items[S.cur]; const {blob,canvas,type}=await exportBlob(it);
-  if(it.type === 'video' && it.file){
-    if(!(await save(mediaName(it,S.cur),blob))) showModal([{type:'video', blob, canvas}]);
-    return;
-  }
-  if(!(await save(mediaName(it,S.cur),blob))) showModal([{type:'image', blob, canvas}]);
+  const btn=$('dlOne'), it=S.items[S.cur]; if(!it) return;
+  if(it.type === 'video') primeAudio();
+  btn.disabled=true; $('dlAll').disabled=true;
+  try{
+    const {blob,canvas,type,ext}=await exportBlob(it, p=>{ btn.textContent=`Đang xuất video… ${pct(p)}`; });
+    if(!(await save(mediaName(it,S.cur,ext),blob))) showModal([{type, blob, canvas}]);
+  } catch(err){ toast('Không xuất được video này'); }
+  finally { btn.disabled=false; $('dlAll').disabled=false; btn.textContent='Tải media này'; }
 };
 $('dlAll').onclick=async()=>{
-  const btn=$('dlAll'); btn.disabled=true; btn.textContent='Đang xuất…';
+  const btn=$('dlAll'); btn.disabled=true; $('dlOne').disabled=true; btn.textContent='Đang xuất…';
+  if(S.items.some(it=>it.type==='video')) primeAudio();
   try{
-    const outs=[]; for(let i=0;i<S.items.length;i++) outs.push(await exportBlob(S.items[i]));
+    const outs=[], n=S.items.length;
+    for(let i=0;i<n;i++){
+      try{ outs.push(await exportBlob(S.items[i], p=>{ btn.textContent=`Đang xuất ${i+1}/${n}… ${pct(p)}`; })); }
+      catch(err){ toast(`Không xuất được media số ${i+1}, đã bỏ qua`); outs.push(null); }
+    }
+    const ok=outs.map((o,i)=>o && {o,i}).filter(Boolean);
     if(downloads && window.JSZip){
-      const zip=new JSZip(); outs.forEach((o,i)=>zip.file(mediaName(S.items[i],i),o.blob));
+      const zip=new JSZip(); ok.forEach(({o,i})=>zip.file(mediaName(S.items[i],i,o.ext),o.blob));
       const z=await zip.generateAsync({type:'blob'});
       const zipName=`klassc_${S.fmt.id}_${S.items.length}-media.zip`;
-      if(!(await save(zipName,z))) showModal(outs.map(o=>({type:o.type==='video'?'video':'image', blob:o.blob, canvas:o.canvas}))); 
-    } else showModal(outs.map(o=>({type:o.type==='video'?'video':'image', blob:o.blob, canvas:o.canvas}))); 
-  } finally { btn.disabled=false; btn.textContent='Tải tất cả (.zip)'; }
+      if(!(await save(zipName,z))) showModal(ok.map(({o})=>({type:o.type, blob:o.blob, canvas:o.canvas})));
+    } else showModal(ok.map(({o})=>({type:o.type, blob:o.blob, canvas:o.canvas})));
+  } finally { btn.disabled=false; $('dlOne').disabled=false; btn.textContent='Tải tất cả (.zip)'; }
 };
 
 let tt=0; function toast(msg){ const t=$('toast'); t.textContent=msg; t.hidden=false; clearTimeout(tt); tt=setTimeout(()=>t.hidden=true,2600); }
 
+function hydrateSyncUi(){
+  const cfg = readSyncConfig();
+  $('syncUrl').value = cfg.url || '';
+  $('syncKey').value = cfg.key || '';
+  $('syncDevice').value = cfg.device || getDeviceId();
+  if(cfg.url && cfg.key){ setSyncStatus(`Sẵn sàng đồng bộ cho ${cfg.device}.`); }
+}
+
+async function bootstrapSavedMedia(){
+  const saved = await restorePersistedMedia();
+  if(saved.length){
+    S.items = saved;
+    S.cur = 0;
+    refresh();
+    toast('Đã phục hồi ảnh đã tải trước đó');
+    return;
+  }
+  S.items.push(sampleItem());
+  S.items[0].img.onload=()=>refresh();
+}
+
 /* ---------- boot ---------- */
-S.items.push(sampleItem());
-S.items[0].img.onload=()=>refresh();
+hydrateSyncUi();
+bootstrapSavedMedia();
 syncFilterStrength(); syncAdvancedPanel();
 drawSizes(); refresh(); drawQRPrev();
 Promise.all([
