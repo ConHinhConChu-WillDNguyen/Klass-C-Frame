@@ -32,9 +32,9 @@ header p{margin:0;color:var(--muted);font-size:13px;max-width:46ch}
 .stage{background:var(--stage);border-radius:14px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:14px;position:relative}
 .stage.drag{outline:2px dashed var(--accent);outline-offset:-8px}
 .zoom-rail{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;z-index:2}
-.zoom-stack{position:relative;width:24px;height:156px;display:flex;align-items:center;justify-content:center}
+.zoom-stack{position:relative;width:24px;height:calc(var(--zoom-len,420px) + 38px);display:flex;align-items:center;justify-content:center}
 .zoom-rail label{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-shadow:0 0 3px rgba(255,255,255,.8)}
-.zoom-rail input{width:118px;height:20px;transform:rotate(-90deg);accent-color:var(--accent);margin:0;cursor:pointer;position:relative;z-index:1}
+.zoom-rail input[type=range]{width:var(--zoom-len,420px);flex:none;height:20px;transform:rotate(-90deg);accent-color:var(--accent);margin:0;cursor:pointer;position:relative;z-index:1}
 .zoom-readout{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:38px;padding:2px 5px;border-radius:999px;background:rgba(34,28,24,.85);color:#f7f2ea;font-size:10px;font-weight:700;text-align:center;pointer-events:none;z-index:2;transition:top .08s ease}
 .zoom-readout::after{content:'';position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);width:8px;height:8px;background:rgba(34,28,24,.9);clip-path:polygon(50% 100%, 0 0, 100% 0);}
 .zoom-rail .zoom-value{display:none}
@@ -1099,10 +1099,19 @@ function syncZoomReadout(){
   const min = Number($('zoom').min || 100);
   const max = Number($('zoom').max || 300);
   const pct = (value - min) / (max - min || 1);
-  const top = 12 + pct * 120;
+  const len = parseFloat(getComputedStyle(stage).getPropertyValue('--zoom-len')) || ZOOM_LEN;
+  // The slider is rotated -90°, so min sits at the bottom; keep the bubble just above the thumb (~16px).
+  const thumbY = (len + 38) / 2 + len / 2 - 8 - pct * (len - 16);
   bubble.textContent = `${value}%`;
-  bubble.style.top = `${top}px`;
+  bubble.style.top = `${thumbY - 22}px`;
 }
+// Track length follows the shown photo: ~70% of its height, kept between a comfortable minimum and a sane maximum.
+const ZOOM_LEN = 420;
+function syncZoomLength(){
+  const len = Math.round(clamp(cv.getBoundingClientRect().height * 0.7, 140, ZOOM_LEN));
+  if(parseFloat(stage.style.getPropertyValue('--zoom-len')) !== len){ stage.style.setProperty('--zoom-len', `${len}px`); syncZoomReadout(); }
+}
+window.addEventListener('resize', syncZoomLength);
 function draw(){ cancelAnimationFrame(raf); raf=requestAnimationFrame(()=>{
   const f=S.fmt; if(cv.width!==f.w||cv.height!==f.h){cv.width=f.w;cv.height=f.h;}
   const it=S.items[S.cur]; if(!it) return;
@@ -1110,7 +1119,7 @@ function draw(){ cancelAnimationFrame(raf); raf=requestAnimationFrame(()=>{
   drawBlurOverlay(it);
   $('mDim').textContent=`${f.w} × ${f.h}`; $('mRatio').textContent=f.ratio;
   $('sampleBadge').hidden=!it.sample;
-  $('zoom').value=Math.round(it.zoom*100); syncZoomReadout(); if(it.type === 'video' && it.video && it.video.readyState >= 2){ requestAnimationFrame(draw); }});}
+  $('zoom').value=Math.round(it.zoom*100); syncZoomLength(); syncZoomReadout(); if(it.type === 'video' && it.video && it.video.readyState >= 2){ requestAnimationFrame(draw); }});}
 
 function syncFilterStrength(){
   const strength = clamp(S.filterStrength, 0, 100);
