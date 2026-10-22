@@ -190,7 +190,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
           <button type="button" class="btn small" id="blurDel" disabled>Xóa vùng đang chọn</button>
           <button type="button" class="btn small" id="blurClear" disabled>Xóa tất cả</button>
         </div>
-        <p class="hint">Chạm vào vùng mờ để chọn, kéo để di chuyển, kéo nút góc dưới để phóng to / thu nhỏ, bấm × ở góc trên để xóa.</p>
+        <p class="hint">Chạm vào vùng mờ để chọn, kéo để di chuyển, kéo nút góc dưới để đổi kích thước (hình tròn kéo dẹt thành e-líp), kéo nút ↻ phía trên để xoay hình vuông / chữ nhật, bấm × ở góc trên để xóa.</p>
       </div>
       <div class="advanced-standalone">
         <button class="btn small advanced-toggle" type="button" id="advancedToggle">Thu gọn chỉnh cơ bản</button>
@@ -233,6 +233,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
         <div class="actions">
           <button class="btn primary" type="button" id="dlOne">Tải media này</button>
           <button class="btn" type="button" id="dlAll">Tải tất cả (.zip)</button>
+          <button class="btn" type="button" id="dlLast" style="grid-column:1/-1">Tải về bộ ảnh cuối</button>
         </div>
         <p class="hint" id="dlHint">Ảnh xuất JPG chất lượng cao. Video được quay lại kèm khung, vùng mờ và tiếng gốc nên mất đúng bằng thời lượng video; giữ tab này mở trong lúc xuất.</p>
       </div>
@@ -315,6 +316,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
           <button class="btn small primary" type="button" id="syncPush">Đồng bộ</button>
         </div>
         <p class="hint" id="syncStatus">Chưa kết nối. Cần Supabase để đồng bộ ảnh giữa điện thoại và máy tính.</p>
+        <p class="hint">Khi đã kết nối, mỗi lần xuất ảnh / video, bộ thành phẩm được lưu vào bucket <b>klassc-exports</b> để nút "Tải về bộ ảnh cuối" lấy lại được trên mọi thiết bị.</p>
       </div>
 
       <details class="mini-section">
@@ -567,6 +569,75 @@ async function pullMediaFromCloud(){
     return false;
   }
 }
+// The last exported set lives in Supabase Storage as sets/<timestamp>/<file>, so any device can fetch it again.
+// Only the newest set is kept; older ones are removed after each upload.
+const EXPORT_BUCKET = 'klassc-exports';
+const storageBase = cfg => `${cfg.url.replace(/\/$/, '')}/storage/v1/object`;
+const storageHeaders = (cfg, extra={}) => ({ 'apikey': cfg.key, 'Authorization': `Bearer ${cfg.key}`, ...extra });
+async function storageList(cfg, prefix){
+  const res = await fetch(`${storageBase(cfg)}/list/${EXPORT_BUCKET}`, {
+    method: 'POST',
+    headers: storageHeaders(cfg, { 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ prefix, limit: 1000, sortBy: { column: 'name', order: 'asc' } })
+  });
+  if(!res.ok) throw new Error(await res.text());
+  return (await res.json()).filter(o => o.name && !o.name.startsWith('.'));
+}
+async function storageRemove(cfg, paths){
+  if(!paths.length) return;
+  await fetch(`${storageBase(cfg)}/${EXPORT_BUCKET}`, {
+    method: 'DELETE',
+    headers: storageHeaders(cfg, { 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ prefixes: paths })
+  });
+}
+async function uploadLastExport(files){
+  const cfg = readSyncConfig();
+  if(!cfg.url || !cfg.key || !files.length) return false;
+  const setId = String(Date.now()), set = `sets/${setId}`;
+  try {
+    for(const f of files){
+      const res = await fetch(`${storageBase(cfg)}/${EXPORT_BUCKET}/${set}/${encodeURIComponent(f.name)}`, {
+        method: 'POST',
+        headers: storageHeaders(cfg, { 'Content-Type': f.blob.type || 'application/octet-stream', 'x-upsert': 'true' }),
+        body: f.blob
+      });
+      if(!res.ok) throw new Error(await res.text());
+    }
+  } catch (err) {
+    storageRemove(cfg, files.map(f => `${set}/${f.name}`)).catch(()=>{});
+    setSyncStatus(`Không lưu được bộ ảnh cuối lên cloud: ${String(err?.message || '').slice(0,120) || 'lỗi server'}`, false);
+    toast('Không lưu được bộ ảnh lên cloud');
+    return false;
+  }
+  try {
+    // timestamps have equal length, so string order is time order; never touch a newer set from another device
+    for(const s of await storageList(cfg, 'sets/')){
+      if(s.name >= setId) continue;
+      const inner = await storageList(cfg, `sets/${s.name}/`);
+      await storageRemove(cfg, inner.map(o => `sets/${s.name}/${o.name}`));
+    }
+  } catch (err) {}
+  setSyncStatus(`Đã lưu bộ ảnh cuối (${files.length} tệp) lên cloud.`);
+  toast('Đã lưu bộ ảnh cuối lên cloud');
+  return true;
+}
+async function fetchLastExport(){
+  const cfg = readSyncConfig();
+  if(!cfg.url || !cfg.key) throw new Error('Chưa kết nối Supabase ở phần Đồng bộ nhiều thiết bị');
+  const sets = await storageList(cfg, 'sets/');
+  const latest = sets[sets.length - 1];
+  if(!latest) return null;
+  const files = [];
+  for(const o of await storageList(cfg, `sets/${latest.name}/`)){
+    const res = await fetch(`${storageBase(cfg)}/${EXPORT_BUCKET}/sets/${latest.name}/${encodeURIComponent(o.name)}`, { headers: storageHeaders(cfg) });
+    if(!res.ok) continue;
+    const blob = await res.blob();
+    const type = /^video\//.test(blob.type) || /\.(mp4|mov|webm|m4v)$/i.test(o.name) ? 'video' : 'image';
+    files.push({ name: o.name, blob, type });
+  }
+  return files.length ? { at: Number(latest.name), files } : null;
+}
 const cv = $('cv'), ctx = cv.getContext('2d');
 let lastGeom = null;
 
@@ -813,19 +884,32 @@ const BLUR_LEVELS = { light:{f:.05,min:6}, medium:{f:.1,min:12}, strong:{f:.2,mi
 // Safari has no canvas `filter`; fall back to a downscale/upscale blur there.
 const CANVAS_FILTER = (() => { try{ const c=document.createElement('canvas'); c.width=c.height=9; const g=c.getContext('2d'); g.filter='blur(2px)'; g.fillStyle='#000'; g.fillRect(4,4,1,1); return g.getImageData(2,4,1,1).data[3]>0; }catch(e){ return false; } })();
 function blurRadius(level,w,h,u){ const L=BLUR_LEVELS[level]||BLUR_LEVELS.medium; return Math.max(L.min*u, Math.min(w,h)*L.f); }
-function blurBoxes(item,img){ return (item.blurs||[]).map(b=>({ b, x:img.x+b.x*img.w, y:img.y+b.y*img.h, w:b.w*img.w, h:b.h*img.h })); }
+// x/y/w/h is the unrotated box; squares and rectangles turn by `rot` (radians) around its centre.
+function blurBoxes(item,img){
+  return (item.blurs||[]).map(b=>{
+    const x=img.x+b.x*img.w, y=img.y+b.y*img.h, w=b.w*img.w, h=b.h*img.h;
+    return { b, x, y, w, h, cx:x+w/2, cy:y+h/2, rot:b.rot||0 };
+  });
+}
+// Box-local point (origin at the centre, axes turned with the box) → canvas point.
+function boxPt(r,lx,ly){ const c=Math.cos(r.rot), s=Math.sin(r.rot); return { x:r.cx+lx*c-ly*s, y:r.cy+lx*s+ly*c }; }
+function boxBounds(r){
+  const c=Math.abs(Math.cos(r.rot)), s=Math.abs(Math.sin(r.rot)), w=r.w*c+r.h*s, h=r.w*s+r.h*c;
+  return { x:r.cx-w/2, y:r.cy-h/2, w, h };
+}
 function blurShape(g,r,shape){
   g.beginPath();
-  if(shape==='circle') g.ellipse(r.x+r.w/2, r.y+r.h/2, r.w/2, r.h/2, 0, 0, Math.PI*2);
-  else g.rect(r.x, r.y, r.w, r.h);
+  if(shape==='circle'){ g.ellipse(r.cx, r.cy, r.w/2, r.h/2, r.rot, 0, Math.PI*2); return; }
+  [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([sx,sy],i)=>{ const q=boxPt(r,sx*r.w/2,sy*r.h/2); if(i) g.lineTo(q.x,q.y); else g.moveTo(q.x,q.y); });
+  g.closePath();
 }
 function drawBlurs(g,src,item,img){
   const u=Math.min(g.canvas.width,g.canvas.height)/1080;
   blurBoxes(item,img).forEach(r=>{
-    const rad=blurRadius(r.b.level,r.w,r.h,u), m=Math.ceil(rad*2);
-    const ww=Math.max(1,Math.ceil(r.w+m*2)), wh=Math.max(1,Math.ceil(r.h+m*2));
+    const rad=blurRadius(r.b.level,r.w,r.h,u), m=Math.ceil(rad*2), A=boxBounds(r);
+    const ww=Math.max(1,Math.ceil(A.w+m*2)), wh=Math.max(1,Math.ceil(A.h+m*2));
     const work=document.createElement('canvas'); work.width=ww; work.height=wh; const wg=work.getContext('2d');
-    const ox=img.x-r.x+m, oy=img.y-r.y+m;
+    const ox=img.x-A.x+m, oy=img.y-A.y+m;
     if(CANVAS_FILTER){ wg.filter=`blur(${rad}px)`; wg.drawImage(src,ox,oy,img.w,img.h); }
     else {
       wg.drawImage(src,ox,oy,img.w,img.h);
@@ -834,7 +918,7 @@ function drawBlurs(g,src,item,img){
       const sg=small.getContext('2d'); sg.imageSmoothingQuality='high'; sg.drawImage(work,0,0,small.width,small.height);
       wg.clearRect(0,0,ww,wh); wg.imageSmoothingQuality='high'; wg.drawImage(small,0,0,ww,wh);
     }
-    g.save(); blurShape(g,r,r.b.shape); g.clip(); g.drawImage(work,r.x-m,r.y-m); g.restore();
+    g.save(); blurShape(g,r,r.b.shape); g.clip(); g.drawImage(work,A.x-m,A.y-m); g.restore();
   });
 }
 
@@ -1032,8 +1116,11 @@ let raf=0;
 // Canvas pixels per CSS pixel, so handles stay finger-sized however small the preview is shown.
 function uiScale(){ const r=cv.getBoundingClientRect(); return r.width? cv.width/r.width : 1; }
 function blurHandles(r,k){
-  const s=28*k, fit=(x,y)=>({ x:clamp(x-s/2,0,cv.width-s), y:clamp(y-s/2,0,cv.height-s), s });
-  return { del:fit(r.x+r.w,r.y), size:fit(r.x+r.w,r.y+r.h) };
+  const s=28*k, fit=q=>({ x:clamp(q.x-s/2,0,cv.width-s), y:clamp(q.y-s/2,0,cv.height-s), s });
+  const hs={ del:fit(boxPt(r,r.w/2,-r.h/2)), size:fit(boxPt(r,r.w/2,r.h/2)) };
+  // Circles flatten into ellipses but don't turn; squares and rectangles get a rotate knob above the top edge.
+  if(r.b.shape!=='circle'){ hs.stem=boxPt(r,0,-r.h/2); hs.rot=fit(boxPt(r,0,-r.h/2-38*k)); }
+  return hs;
 }
 function drawBlurOverlay(it){
   if(!lastGeom?.img || !it.blurs?.length) return;
@@ -1047,7 +1134,12 @@ function drawBlurOverlay(it){
     ctx.restore();
     if(!sel) return;
     const h=blurHandles(r,k);
-    [[h.del,'#B4432F'],[h.size,'#fff']].forEach(([q,bg])=>{
+    if(h.rot){
+      ctx.save(); ctx.strokeStyle='#fff'; ctx.lineWidth=1.5*k; ctx.shadowColor='rgba(0,0,0,.55)'; ctx.shadowBlur=3*k;
+      ctx.beginPath(); ctx.moveTo(h.stem.x,h.stem.y); ctx.lineTo(h.rot.x+h.rot.s/2,h.rot.y+h.rot.s/2); ctx.stroke(); ctx.restore();
+    }
+    [[h.del,'#B4432F'],[h.size,'#fff'],[h.rot,'#fff']].forEach(([q,bg])=>{
+      if(!q) return;
       ctx.save(); ctx.shadowColor='rgba(0,0,0,.4)'; ctx.shadowBlur=4*k; ctx.fillStyle=bg;
       ctx.beginPath(); ctx.arc(q.x+q.s/2,q.y+q.s/2,q.s/2,0,Math.PI*2); ctx.fill(); ctx.restore();
     });
@@ -1055,10 +1147,18 @@ function drawBlurOverlay(it){
     ctx.save(); ctx.lineCap='round'; ctx.lineWidth=2.2*k;
     let cx=h.del.x+h.del.s/2, cy=h.del.y+h.del.s/2; ctx.strokeStyle='#fff';
     ctx.beginPath(); ctx.moveTo(cx-c,cy-c); ctx.lineTo(cx+c,cy+c); ctx.moveTo(cx+c,cy-c); ctx.lineTo(cx-c,cy+c); ctx.stroke();
-    cx=h.size.x+h.size.s/2; cy=h.size.y+h.size.s/2; ctx.strokeStyle='#221C18';
-    ctx.beginPath(); ctx.moveTo(cx-c,cy-c); ctx.lineTo(cx+c,cy+c);
-    ctx.moveTo(cx+c,cy+c-c*0.9); ctx.lineTo(cx+c,cy+c); ctx.lineTo(cx+c-c*0.9,cy+c);
-    ctx.moveTo(cx-c,cy-c+c*0.9); ctx.lineTo(cx-c,cy-c); ctx.lineTo(cx-c+c*0.9,cy-c); ctx.stroke();
+    // resize arrow, turned with the box so it points along its diagonal
+    ctx.save(); ctx.translate(h.size.x+h.size.s/2,h.size.y+h.size.s/2); ctx.rotate(r.rot); ctx.strokeStyle='#221C18';
+    ctx.beginPath(); ctx.moveTo(-c,-c); ctx.lineTo(c,c);
+    ctx.moveTo(c,c-c*0.9); ctx.lineTo(c,c); ctx.lineTo(c-c*0.9,c);
+    ctx.moveTo(-c,-c+c*0.9); ctx.lineTo(-c,-c); ctx.lineTo(-c+c*0.9,-c); ctx.stroke();
+    ctx.restore();
+    if(h.rot){ // circular arrow
+      cx=h.rot.x+h.rot.s/2; cy=h.rot.y+h.rot.s/2; const a=c*1.1, end=Math.PI*1.65;
+      ctx.strokeStyle='#221C18'; ctx.beginPath(); ctx.arc(cx,cy,a,Math.PI*0.15,end); ctx.stroke();
+      const ex=cx+a*Math.cos(end), ey=cy+a*Math.sin(end);
+      ctx.beginPath(); ctx.moveTo(ex-c*0.75,ey-c*0.15); ctx.lineTo(ex,ey); ctx.lineTo(ex-c*0.1,ey+c*0.75); ctx.stroke();
+    }
     ctx.restore();
   });
 }
@@ -1069,8 +1169,12 @@ function hitBlur(p){
     const h=blurHandles(selBox,uiScale()), near=q=>Math.hypot(p.x-(q.x+q.s/2),p.y-(q.y+q.s/2))<=q.s*0.8;
     if(near(h.del)) return {mode:'del', r:selBox};
     if(near(h.size)) return {mode:'size', r:selBox};
+    if(h.rot && near(h.rot)) return {mode:'rot', r:selBox};
   }
-  for(let i=boxes.length-1;i>=0;i--){ const r=boxes[i]; if(p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h) return {mode:'move', r}; }
+  for(let i=boxes.length-1;i>=0;i--){
+    const r=boxes[i], dx=p.x-r.cx, dy=p.y-r.cy, c=Math.cos(r.rot), s=Math.sin(r.rot);
+    if(Math.abs(dx*c+dy*s)<=r.w/2 && Math.abs(-dx*s+dy*c)<=r.h/2) return {mode:'move', r};
+  }
   return null;
 }
 function syncBlurUi(){
@@ -1281,7 +1385,7 @@ cv.addEventListener('pointerdown',e=>{
     if(hb.mode==='del'){ removeBlur(hb.r.b); return; }
     S.blurSel = hb.r.b; syncBlurUi();
     cv.setPointerCapture(e.pointerId);
-    blurDrag = { mode:hb.mode, b:hb.r.b, sx:p.x, sy:p.y, x:hb.r.x, y:hb.r.y, w:hb.r.w, h:hb.r.h };
+    blurDrag = { mode:hb.mode, b:hb.r.b, sx:p.x, sy:p.y, r:hb.r, anchor:boxPt(hb.r,-hb.r.w/2,-hb.r.h/2) };
     draw();
     return;
   }
@@ -1315,13 +1419,24 @@ cv.addEventListener('pointerdown',e=>{
 });
 cv.addEventListener('pointermove',e=>{
   if(blurDrag && lastGeom?.img){
-    const p = getCanvasPoint(e), d = blurDrag, img = lastGeom.img;
+    const p = getCanvasPoint(e), d = blurDrag, r0 = d.r, img = lastGeom.img;
     const dx = p.x - d.sx, dy = p.y - d.sy, min = 24 * uiScale();
-    let x = d.x, y = d.y, w = d.w, h = d.h;
-    if(d.mode === 'move'){ x += dx; y += dy; }
-    else if(d.b.shape === 'rect'){ w = Math.max(min, d.w + dx); h = Math.max(min, d.h + dy); }
-    else { w = h = Math.max(min, d.w + (dx + dy) / 2); }
-    d.b.x = (x - img.x) / img.w; d.b.y = (y - img.y) / img.h; d.b.w = w / img.w; d.b.h = h / img.h;
+    let cx = r0.cx, cy = r0.cy, w = r0.w, h = r0.h, rot = r0.rot;
+    if(d.mode === 'move'){ cx += dx; cy += dy; }
+    else if(d.mode === 'rot'){
+      rot = r0.rot + Math.atan2(p.y - cy, p.x - cx) - Math.atan2(d.sy - cy, d.sx - cx);
+      const q = Math.PI / 2, snap = Math.round(rot / q) * q;
+      if(Math.abs(rot - snap) < 0.07) rot = snap; // click into straight angles within ~4°
+    }
+    else {
+      // resize in the box's own axes, keeping the opposite corner pinned
+      const c = Math.cos(rot), s = Math.sin(rot), lx = dx * c + dy * s, ly = -dx * s + dy * c;
+      if(d.b.shape === 'square'){ w = h = Math.max(min, r0.w + (lx + ly) / 2); }
+      else { w = Math.max(min, r0.w + lx); h = Math.max(min, r0.h + ly); }
+      cx = d.anchor.x + (w / 2) * c - (h / 2) * s; cy = d.anchor.y + (w / 2) * s + (h / 2) * c;
+    }
+    d.b.x = (cx - w / 2 - img.x) / img.w; d.b.y = (cy - h / 2 - img.y) / img.h; d.b.w = w / img.w; d.b.h = h / img.h;
+    if(d.b.shape !== 'circle') d.b.rot = rot;
     draw();
     return;
   }
@@ -1559,7 +1674,7 @@ function showModal(items){
       const v=document.createElement('video'); v.src=URL.createObjectURL(item.blob); v.controls=true; v.playsInline=true; v.style.maxWidth='min(100%,520px)'; v.style.width='100%'; v.style.background='#000'; m.append(v);
       return;
     }
-    const c=item.canvas || item.img || item; const im=new Image(); im.src=c.toDataURL('image/jpeg',.93); im.alt='Ảnh đã gắn khung'; im.style.maxWidth='min(100%,520px)'; im.style.width='100%'; im.style.height='auto'; im.style.background='repeating-conic-gradient(#ccc 0 25%,#fff 0 50%) 0 0/20px 20px'; m.append(im);
+    const c=item.canvas || item.img || item; const im=new Image(); im.src=item.blob && !item.canvas ? URL.createObjectURL(item.blob) : c.toDataURL('image/jpeg',.93); im.alt='Ảnh đã gắn khung'; im.style.maxWidth='min(100%,520px)'; im.style.width='100%'; im.style.height='auto'; im.style.background='repeating-conic-gradient(#ccc 0 25%,#fff 0 50%) 0 0/20px 20px'; m.append(im);
   });
   m.hidden=false;
 }
@@ -1570,7 +1685,9 @@ $('dlOne').onclick=async()=>{
   btn.disabled=true; $('dlAll').disabled=true;
   try{
     const {blob,canvas,type,ext}=await exportBlob(it, p=>{ btn.textContent=`Đang xuất video… ${pct(p)}`; });
-    if(!(await save(mediaName(it,S.cur,ext),blob))) showModal([{type, blob, canvas}]);
+    const name=mediaName(it,S.cur,ext);
+    uploadLastExport([{name, blob}]);
+    if(!(await save(name,blob))) showModal([{type, blob, canvas}]);
   } catch(err){ toast('Không xuất được video này'); }
   finally { btn.disabled=false; $('dlAll').disabled=false; btn.textContent='Tải media này'; }
 };
@@ -1584,6 +1701,7 @@ $('dlAll').onclick=async()=>{
       catch(err){ toast(`Không xuất được media số ${i+1}, đã bỏ qua`); outs.push(null); }
     }
     const ok=outs.map((o,i)=>o && {o,i}).filter(Boolean);
+    uploadLastExport(ok.map(({o,i})=>({name:mediaName(S.items[i],i,o.ext), blob:o.blob})));
     if(downloads && window.JSZip){
       const zip=new JSZip(); ok.forEach(({o,i})=>zip.file(mediaName(S.items[i],i,o.ext),o.blob));
       const z=await zip.generateAsync({type:'blob'});
@@ -1591,6 +1709,23 @@ $('dlAll').onclick=async()=>{
       if(!(await save(zipName,z))) showModal(ok.map(({o})=>({type:o.type, blob:o.blob, canvas:o.canvas})));
     } else showModal(ok.map(({o})=>({type:o.type, blob:o.blob, canvas:o.canvas})));
   } finally { btn.disabled=false; $('dlOne').disabled=false; btn.textContent='Tải tất cả (.zip)'; }
+};
+$('dlLast').onclick=async()=>{
+  const btn=$('dlLast'); btn.disabled=true; btn.textContent='Đang tải bộ ảnh cuối…';
+  try{
+    const last=await fetchLastExport();
+    if(!last){ toast('Chưa có bộ ảnh nào được xuất lên cloud'); return; }
+    setSyncStatus(`Bộ ảnh cuối: ${last.files.length} tệp, xuất lúc ${new Date(last.at).toLocaleString('vi-VN')}.`);
+    const modalItems=last.files.map(f=>({type:f.type, blob:f.blob}));
+    if(last.files.length===1){
+      const f=last.files[0]; if(!(await save(f.name,f.blob))) showModal(modalItems);
+    } else if(downloads && window.JSZip){
+      const zip=new JSZip(); last.files.forEach(f=>zip.file(f.name,f.blob));
+      const z=await zip.generateAsync({type:'blob'});
+      if(!(await save(`klassc_bo-anh-cuoi_${last.files.length}-media.zip`,z))) showModal(modalItems);
+    } else showModal(modalItems);
+  } catch(err){ toast(err?.message?.startsWith('Chưa') ? err.message : 'Không tải được bộ ảnh cuối từ cloud'); }
+  finally { btn.disabled=false; btn.textContent='Tải về bộ ảnh cuối'; }
 };
 
 let tt=0; function toast(msg){ const t=$('toast'); t.textContent=msg; t.hidden=false; clearTimeout(tt); tt=setTimeout(()=>t.hidden=true,2600); }
