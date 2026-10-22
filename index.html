@@ -437,10 +437,19 @@ function readPersistedMedia(){
     return [];
   }
 }
+// Supabase shows URLs like https://x.supabase.co/rest/v1/ in places; every call here needs just the origin.
+function supabaseOrigin(url){
+  url = (url || '').trim();
+  if(!url) return '';
+  try { return new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).origin; }
+  catch (err) { return url.replace(/\/+$/, ''); }
+}
 function readSyncConfig(){
   try {
     const raw = localStorage.getItem(SYNC_CONFIG_KEY);
-    return raw ? JSON.parse(raw) : { url:'', key:'', device:'PC-01' };
+    const cfg = raw ? JSON.parse(raw) : { url:'', key:'', device:'PC-01' };
+    cfg.url = supabaseOrigin(cfg.url); cfg.key = (cfg.key || '').trim();
+    return cfg;
   } catch (err) {
     return { url:'', key:'', device:'PC-01' };
   }
@@ -1547,11 +1556,12 @@ $('advancedToggle').onclick=()=>{ S.advOpen = !S.advOpen; syncAdvancedPanel(); }
 $('safeChk').onchange=e=>{S.safe=e.target.checked; draw();};
 $('syncConnect').onclick=()=>{
   const cfg = {
-    url: $('syncUrl').value.trim(),
+    url: supabaseOrigin($('syncUrl').value),
     key: $('syncKey').value.trim(),
     device: $('syncDevice').value.trim() || getDeviceId()
   };
   writeSyncConfig(cfg);
+  $('syncUrl').value = cfg.url;
   setSyncStatus(cfg.url && cfg.key ? `Đã lưu cấu hình cho ${cfg.device}. Bạn có thể đồng bộ.` : 'Cần nhập Supabase URL và anon key để bật đồng bộ.', !!(cfg.url && cfg.key));
 };
 $('syncPush').onclick=async()=>{
@@ -1724,7 +1734,12 @@ $('dlLast').onclick=async()=>{
       const z=await zip.generateAsync({type:'blob'});
       if(!(await save(`klassc_bo-anh-cuoi_${last.files.length}-media.zip`,z))) showModal(modalItems);
     } else showModal(modalItems);
-  } catch(err){ toast(err?.message?.startsWith('Chưa') ? err.message : 'Không tải được bộ ảnh cuối từ cloud'); }
+  } catch(err){
+    const msg=String(err?.message||'');
+    if(msg.startsWith('Chưa')){ toast(msg); return; }
+    toast('Không tải được bộ ảnh cuối từ cloud');
+    setSyncStatus(`Không tải được bộ ảnh cuối: ${msg.slice(0,160) || 'không kết nối được Supabase'}`, false);
+  }
   finally { btn.disabled=false; btn.textContent='Tải về bộ ảnh cuối'; }
 };
 
