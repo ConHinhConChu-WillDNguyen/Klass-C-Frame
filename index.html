@@ -129,6 +129,10 @@ textarea{font:500 14px var(--ui);color:var(--fg);background:var(--chip);border:1
 .adjust-control label b{font-size:11px;color:var(--fg)}
 .adjust-reset{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;line-height:1}
 .adjust-reset:hover{border-color:var(--accent);color:var(--accent)}
+.adjust-sync{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.rotate-bar{display:flex;align-items:center;gap:10px;width:min(100%,560px);color:var(--muted);font-size:12px;font-weight:700}
+.rotate-bar input[type=range]{flex:1;min-width:0;accent-color:var(--accent);margin:0;cursor:pointer}
+.rotate-bar b{color:var(--fg);min-width:42px;text-align:right;font-variant-numeric:tabular-nums}
 .sw{width:20px;height:20px;border-radius:50%;border:1px solid rgba(0,0,0,.2)}
 .field{display:flex;flex-direction:column;gap:5px}
 .field label{font-size:12px;font-weight:600}
@@ -172,6 +176,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
           <label for="zoom">Zoom</label>
         </div>
         <canvas id="cv" width="1080" height="1350" aria-label="Xem trước ảnh có khung Klass-C"></canvas>
+        <div class="rotate-bar">
+          <button type="button" class="btn small" id="rot90" title="Xoay 90° theo chiều kim đồng hồ">⟳ 90°</button>
+          <label for="rotate">Xoay</label>
+          <input type="range" id="rotate" min="-45" max="45" step="0.5" value="0">
+          <b id="rotateValue">0°</b>
+          <button type="button" class="adjust-reset" id="rotateReset" aria-label="Đặt lại góc xoay" title="Đặt lại">↺</button>
+        </div>
         <div class="stage-meta"><span>Kích thước xuất <b id="mDim">1080 × 1350</b></span><span>Tỉ lệ <b id="mRatio">4:5</b></span><span>Kéo ảnh để căn vị trí</span></div>
       </div>
       <div class="blur-tools">
@@ -200,9 +211,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
             <div class="adjust-control"><label for="adjContrast"><span>Độ tương phản</span><span class="adjust-meta"><b id="adjContrastValue">0</b><button type="button" class="adjust-reset" data-reset="contrast" aria-label="Quay lại độ tương phản" title="Đặt lại">↺</button></span></label><input id="adjContrast" type="range" min="-100" max="100" value="0"></div>
             <div class="adjust-control"><label for="adjHighlights"><span>Độ sáng vùng sáng</span><span class="adjust-meta"><b id="adjHighlightsValue">0</b><button type="button" class="adjust-reset" data-reset="highlights" aria-label="Quay lại độ sáng vùng sáng" title="Đặt lại">↺</button></span></label><input id="adjHighlights" type="range" min="-100" max="100" value="0"></div>
             <div class="adjust-control"><label for="adjShadows"><span>Độ sáng vùng tối</span><span class="adjust-meta"><b id="adjShadowsValue">0</b><button type="button" class="adjust-reset" data-reset="shadows" aria-label="Quay lại độ sáng vùng tối" title="Đặt lại">↺</button></span></label><input id="adjShadows" type="range" min="-100" max="100" value="0"></div>
+            <div class="adjust-control"><label for="adjWhites"><span>Điểm trắng (Whites)</span><span class="adjust-meta"><b id="adjWhitesValue">0</b><button type="button" class="adjust-reset" data-reset="whites" aria-label="Quay lại điểm trắng" title="Đặt lại">↺</button></span></label><input id="adjWhites" type="range" min="-100" max="100" value="0"></div>
+            <div class="adjust-control"><label for="adjBlacks"><span>Điểm đen (Blacks)</span><span class="adjust-meta"><b id="adjBlacksValue">0</b><button type="button" class="adjust-reset" data-reset="blacks" aria-label="Quay lại điểm đen" title="Đặt lại">↺</button></span></label><input id="adjBlacks" type="range" min="-100" max="100" value="0"></div>
             <div class="adjust-control"><label for="adjSaturation"><span>Độ bão hòa</span><span class="adjust-meta"><b id="adjSaturationValue">0</b><button type="button" class="adjust-reset" data-reset="saturation" aria-label="Quay lại độ bão hòa" title="Đặt lại">↺</button></span></label><input id="adjSaturation" type="range" min="-100" max="100" value="0"></div>
             <div class="adjust-control"><label for="adjWarmth"><span>Nhiệt độ màu</span><span class="adjust-meta"><b id="adjWarmthValue">0</b><button type="button" class="adjust-reset" data-reset="warmth" aria-label="Quay lại nhiệt độ màu" title="Đặt lại">↺</button></span></label><input id="adjWarmth" type="range" min="-100" max="100" value="0"></div>
-            <div class="adjust-control" style="grid-column:1/-1;"><label for="adjVignette"><span>Viền tối</span><span class="adjust-meta"><b id="adjVignetteValue">0</b><button type="button" class="adjust-reset" data-reset="vignette" aria-label="Quay lại viền tối" title="Đặt lại">↺</button></span></label><input id="adjVignette" type="range" min="0" max="100" value="0"></div>
+            <div class="adjust-control"><label for="adjTint"><span>Sắc thái (Tint)</span><span class="adjust-meta"><b id="adjTintValue">0</b><button type="button" class="adjust-reset" data-reset="tint" aria-label="Quay lại sắc thái" title="Đặt lại">↺</button></span></label><input id="adjTint" type="range" min="-100" max="100" value="0" title="Âm: ngả xanh lá · Dương: ngả hồng tím"></div>
+            <div class="adjust-control"><label for="adjClarity"><span>Độ trong (Clarity)</span><span class="adjust-meta"><b id="adjClarityValue">0</b><button type="button" class="adjust-reset" data-reset="clarity" aria-label="Quay lại độ trong" title="Đặt lại">↺</button></span></label><input id="adjClarity" type="range" min="-100" max="100" value="0"></div>
+            <div class="adjust-control"><label for="adjDetail"><span>Chi tiết (Detail)</span><span class="adjust-meta"><b id="adjDetailValue">0</b><button type="button" class="adjust-reset" data-reset="detail" aria-label="Quay lại chi tiết" title="Đặt lại">↺</button></span></label><input id="adjDetail" type="range" min="-100" max="100" value="0"></div>
+            <div class="adjust-control"><label for="adjVignette"><span>Viền tối</span><span class="adjust-meta"><b id="adjVignetteValue">0</b><button type="button" class="adjust-reset" data-reset="vignette" aria-label="Quay lại viền tối" title="Đặt lại">↺</button></span></label><input id="adjVignette" type="range" min="0" max="100" value="0"></div>
+          </div>
+          <div class="adjust-sync">
+            <button class="btn small" type="button" id="adjSyncAll">Đồng bộ chỉnh sửa cho tất cả ảnh</button>
+            <p class="hint">Mỗi ảnh giữ chỉnh sửa riêng. Bấm nút trên để áp dụng cài đặt của ảnh đang chọn cho mọi ảnh đã tải lên.</p>
           </div>
         </div>
       </div>
@@ -387,8 +407,11 @@ const FILTERS = [
 
 const MEDIA_STORAGE_KEY = 'klassc-frame-studio-media-v1';
 const SYNC_CONFIG_KEY = 'klassc-sync-config-v1';
+// Basic edits live on each media item (`item.adjust`); the sync button copies one item's set to all of them.
+const ADJ_KEYS = ['exposure','contrast','highlights','shadows','whites','blacks','saturation','warmth','tint','clarity','detail','vignette'];
+const blankAdjust = () => Object.fromEntries(ADJ_KEYS.map(k => [k, 0]));
+const NO_ADJUST = Object.freeze(blankAdjust());
 const S = { plat:'ig', fmt:FORMATS.ig[1], frame:'signature', tone:'cream', filter:'original', filterStrength:100,
-  adjust:{ exposure:0, contrast:0, highlights:0, shadows:0, saturation:0, warmth:0, vignette:0 },
   advOpen:false, tagline:'Class with Karacter', handle:'KlassCWear', note:'Made for Good Taste',
   logo:null, logoStyle:'kc-ngang',
   info:{ on:true, pos:'tl', title:'Standard Kaki Pants',
@@ -745,14 +768,17 @@ function getFilterOverlay(){
   const alpha = (preset.alpha ?? 0.18) * (0.25 + strength * 0.9);
   return { tint:preset.tint || '#ffffff', alpha: Math.min(alpha, 0.72) };
 }
-function applyBaseAdjustmentsToImageData(imageData){
+function applyBaseAdjustmentsToImageData(imageData, a){
   const data = imageData.data;
-  const exposure = clamp(S.adjust.exposure, -100, 100) / 100;
-  const contrast = clamp(S.adjust.contrast, -100, 100) / 100;
-  const saturation = clamp(1 + S.adjust.saturation / 100, 0, 2.4);
-  const warmth = clamp(S.adjust.warmth, -100, 100) / 100;
-  const highlights = clamp(S.adjust.highlights, -100, 100) / 100;
-  const shadows = clamp(S.adjust.shadows, -100, 100) / 100;
+  const exposure = clamp(a.exposure, -100, 100) / 100;
+  const contrast = clamp(a.contrast, -100, 100) / 100;
+  const saturation = clamp(1 + a.saturation / 100, 0, 2.4);
+  const warmth = clamp(a.warmth, -100, 100) / 100;
+  const highlights = clamp(a.highlights, -100, 100) / 100;
+  const shadows = clamp(a.shadows, -100, 100) / 100;
+  const whites = clamp(a.whites || 0, -100, 100) / 100;
+  const blacks = clamp(a.blacks || 0, -100, 100) / 100;
+  const tint = clamp(a.tint || 0, -100, 100) / 100;
   for(let i=0;i<data.length;i+=4){
     let r = data[i];
     let g = data[i+1];
@@ -796,14 +822,66 @@ function applyBaseAdjustmentsToImageData(imageData){
       b -= warmth * 110;
     }
 
+    // Whites / Blacks move the ends of the tonal range: weighted towards the brightest / darkest pixels.
+    if(whites || blacks){
+      const t = clamp((0.2126 * r + 0.7152 * g + 0.0722 * b) / 255, 0, 1);
+      const shift = whites * 80 * t * t + blacks * 80 * (1 - t) * (1 - t);
+      r += shift; g += shift; b += shift;
+    }
+    // Tint: negative leans green, positive leans magenta.
+    if(tint){
+      r += tint * 32;
+      g -= tint * 55;
+      b += tint * 32;
+    }
+
     data[i] = clamp(r,0,255);
     data[i+1] = clamp(g,0,255);
     data[i+2] = clamp(b,0,255);
   }
   return imageData;
 }
-function applyPhotoAdjustments(g,rx,ry,rw,rh){
-  const a=S.adjust; const warmth = a.warmth / 100;
+// Blurred copies of the working photo, one canvas per radius slot, reused across frames.
+const LOCAL_TMP = new WeakMap();
+function blurredData(src, rad, slot){
+  let slots = LOCAL_TMP.get(src); if(!slots){ slots = {}; LOCAL_TMP.set(src, slots); }
+  const c = slots[slot] ||= document.createElement('canvas');
+  if(c.width !== src.width || c.height !== src.height){ c.width = src.width; c.height = src.height; }
+  const g = c.getContext('2d', { willReadFrequently:true });
+  g.drawImage(src, 0, 0); // sharp backing keeps the edges opaque under the blur
+  if(CANVAS_FILTER){ g.filter = `blur(${rad}px)`; g.drawImage(src, 0, 0); g.filter = 'none'; }
+  else {
+    const small = document.createElement('canvas');
+    small.width = Math.max(2, Math.round(src.width / rad)); small.height = Math.max(2, Math.round(src.height / rad));
+    const sg = small.getContext('2d'); sg.imageSmoothingQuality = 'high'; sg.drawImage(src, 0, 0, small.width, small.height);
+    g.imageSmoothingQuality = 'high'; g.drawImage(small, 0, 0, c.width, c.height);
+  }
+  return g.getImageData(0, 0, c.width, c.height).data;
+}
+// Clarity pushes mid-tones away from a wide blur (local contrast); Detail does the same against a tight blur (sharpening).
+// Negative values pull towards the blur instead, softening the photo.
+function applyLocalContrast(tg, a){
+  const clarity = clamp(a.clarity || 0, -100, 100) / 100, detail = clamp(a.detail || 0, -100, 100) / 100;
+  if(!clarity && !detail) return;
+  const src = tg.canvas, w = src.width, h = src.height, short = Math.min(w, h);
+  const wide = clarity ? blurredData(src, Math.max(3, short * 0.025), 'wide') : null;
+  const fine = detail ? blurredData(src, Math.max(1, short * 0.0018), 'fine') : null;
+  const img = tg.getImageData(0, 0, w, h), d = img.data;
+  const cAmt = clarity * (clarity > 0 ? 1.1 : 0.85), dAmt = detail * (detail > 0 ? 1.8 : 0.9);
+  for(let i=0;i<d.length;i+=4){
+    const r = d[i], g = d[i+1], b = d[i+2];
+    let nr = r, ng = g, nb = b;
+    if(wide){
+      const t = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 127.5 - 1, m = (1 - t * t) * cAmt; // strongest in mid-tones
+      nr += (r - wide[i]) * m; ng += (g - wide[i+1]) * m; nb += (b - wide[i+2]) * m;
+    }
+    if(fine){ nr += (r - fine[i]) * dAmt; ng += (g - fine[i+1]) * dAmt; nb += (b - fine[i+2]) * dAmt; }
+    d[i] = clamp(nr, 0, 255); d[i+1] = clamp(ng, 0, 255); d[i+2] = clamp(nb, 0, 255);
+  }
+  tg.putImageData(img, 0, 0);
+}
+function applyPhotoAdjustments(g,a,rx,ry,rw,rh){
+  const warmth = a.warmth / 100;
   const vignette = a.vignette / 100;
   const hasTone = Math.abs(warmth) > 0.001 || vignette > 0.001 || a.highlights !== 0 || a.shadows !== 0;
   if(!hasTone) return;
@@ -845,9 +923,16 @@ function drawPhoto(g,item,rx,ry,rw,rh){
   if(!media) return {ox:0,oy:0};
   const iw = media.videoWidth || media.naturalWidth || media.width || 1;
   const ih = media.videoHeight || media.naturalHeight || media.height || 1;
-  const scale = Math.max(rw / iw, rh / ih) * item.zoom;
-  const dw = iw * scale;
-  const dh = ih * scale;
+  // Rotation = quarter turns + a fine angle. The fine angle crops to the largest same-shaped rectangle
+  // inside the turned photo, so no empty corners show and everything below works on an upright box.
+  const turn = (((item.rot90 || 0) % 4) + 4) % 4, fine = (item.rot || 0) * Math.PI / 180;
+  const ew = turn % 2 ? ih : iw, eh = turn % 2 ? iw : ih;
+  const fc = Math.abs(Math.cos(fine)), fs = Math.abs(Math.sin(fine));
+  const crop = Math.min(ew / (ew * fc + eh * fs), eh / (ew * fs + eh * fc));
+  const cw = ew * crop, ch = eh * crop;
+  const scale = Math.max(rw / cw, rh / ch) * item.zoom;
+  const dw = cw * scale;
+  const dh = ch * scale;
   const maxX = Math.max(0, dw - rw);
   const maxY = Math.max(0, dh - rh);
   const px = clamp(Number.isFinite(item.px) ? item.px : 0, -1, 1);
@@ -855,7 +940,8 @@ function drawPhoto(g,item,rx,ry,rw,rh){
   const x = rx + (rw - dw) / 2 + px * maxX * 0.5;
   const y = ry + (rh - dh) / 2 + py * maxY * 0.5;
   const filter = getFilterOverlay();
-  const hasImageAdjust = [S.adjust.exposure, S.adjust.contrast, S.adjust.saturation, S.adjust.highlights, S.adjust.shadows, S.adjust.warmth].some(v => v !== 0);
+  const adj = item.adjust || NO_ADJUST;
+  const hasImageAdjust = [adj.exposure, adj.contrast, adj.saturation, adj.highlights, adj.shadows, adj.warmth, adj.whites, adj.blacks, adj.tint].some(v => v);
 
   let tmp = PHOTO_TMP.get(g.canvas);
   if(!tmp){ tmp = document.createElement('canvas'); PHOTO_TMP.set(g.canvas, tmp); }
@@ -863,13 +949,21 @@ function drawPhoto(g,item,rx,ry,rw,rh){
   if(tmp.width !== tw || tmp.height !== th){ tmp.width = tw; tmp.height = th; }
   const tg = tmp.getContext('2d', { willReadFrequently:true });
   tg.clearRect(0, 0, tmp.width, tmp.height);
-  tg.drawImage(media, 0, 0, iw, ih, 0, 0, tmp.width, tmp.height);
+  if(!turn && !fine){ tg.drawImage(media, 0, 0, iw, ih, 0, 0, tmp.width, tmp.height); }
+  else {
+    const k = scale * tmp.width / dw;
+    tg.save(); tg.imageSmoothingQuality = 'high';
+    tg.translate(tmp.width / 2, tmp.height / 2); tg.rotate(turn * Math.PI / 2 + fine);
+    tg.drawImage(media, 0, 0, iw, ih, -iw * k / 2, -ih * k / 2, iw * k, ih * k);
+    tg.restore();
+  }
 
   if(hasImageAdjust){
     const img = tg.getImageData(0, 0, tmp.width, tmp.height);
-    applyBaseAdjustmentsToImageData(img);
+    applyBaseAdjustmentsToImageData(img, adj);
     tg.putImageData(img, 0, 0);
   }
+  applyLocalContrast(tg, adj);
 
   const img = { x, y, w:dw, h:dh };
   g.save();
@@ -883,7 +977,7 @@ function drawPhoto(g,item,rx,ry,rw,rh){
     g.fillRect(rx,ry,rw,rh);
   }
   g.restore();
-  applyPhotoAdjustments(g,rx,ry,rw,rh);
+  applyPhotoAdjustments(g,adj,rx,ry,rw,rh);
   return { ox: maxX, oy: maxY, img, rect:{ x:rx, y:ry, w:rw, h:rh } };
 }
 
@@ -1232,7 +1326,7 @@ function draw(){ cancelAnimationFrame(raf); raf=requestAnimationFrame(()=>{
   drawBlurOverlay(it);
   $('mDim').textContent=`${f.w} × ${f.h}`; $('mRatio').textContent=f.ratio;
   $('sampleBadge').hidden=!it.sample;
-  $('zoom').value=Math.round(it.zoom*100); syncZoomLength(); syncZoomReadout(); if(it.type === 'video' && it.video && it.video.readyState >= 2){ requestAnimationFrame(draw); }});}
+  $('zoom').value=Math.round(it.zoom*100); syncZoomLength(); syncZoomReadout(); syncRotate(it); if(it.type === 'video' && it.video && it.video.readyState >= 2){ requestAnimationFrame(draw); }});}
 
 function syncFilterStrength(){
   const strength = clamp(S.filterStrength, 0, 100);
@@ -1247,21 +1341,27 @@ function syncAdvancedPanel(){
   const wrap=$('advancedWrap'); const btn=$('advancedToggle');
   wrap.hidden = !S.advOpen; wrap.classList.toggle('open', S.advOpen);
   btn.textContent = S.advOpen ? 'Thu gọn chỉnh cơ bản' : 'Chỉnh sửa cơ bản';
-  const keys = ['exposure','contrast','highlights','shadows','saturation','warmth','vignette'];
-  keys.forEach(key => {
-    const value = S.adjust[key];
+  const adj = curAdjust();
+  ADJ_KEYS.forEach(key => {
+    const value = adj[key];
     const input = document.getElementById(`adj${key.charAt(0).toUpperCase() + key.slice(1)}`);
     if(input){ input.value = value; }
     const label = document.getElementById(`adj${key.charAt(0).toUpperCase() + key.slice(1)}Value`);
     if(label){ label.textContent = value; }
   });
 }
+function curAdjust(){ const it=S.items[S.cur]; return it ? (it.adjust ||= blankAdjust()) : NO_ADJUST; }
 function applyAdjustFromInput(key){
   const input = document.getElementById(`adj${key.charAt(0).toUpperCase() + key.slice(1)}`);
-  if(!input) return;
-  S.adjust[key] = Number(input.value);
+  if(!input || !S.items[S.cur]) return;
+  curAdjust()[key] = Number(input.value);
   syncAdvancedPanel();
   draw();
+}
+function syncRotate(it){
+  const deg = it?.rot || 0;
+  $('rotate').value = deg;
+  $('rotateValue').textContent = `${deg > 0 ? '+' : ''}${deg}°`;
 }
 function drawFilters(){
   const box=$('filters'); box.innerHTML='';
@@ -1337,7 +1437,7 @@ function drawLogos(){
     box.append(b);
   });
 }
-function refresh(){ drawStrip(); drawFilters(); drawLogos(); drawFrameThumbs(); syncBlurUi(); draw(); }
+function refresh(){ drawStrip(); drawFilters(); drawLogos(); drawFrameThumbs(); syncBlurUi(); syncAdvancedPanel(); draw(); }
 
 /* ---------- loading images ---------- */
 function sampleItem(){ return {img:makeSample(),name:'mau',zoom:1,px:0,py:0,sample:true,type:'image'}; }
@@ -1540,19 +1640,27 @@ document.querySelectorAll('.filter-level').forEach(btn => {
 document.querySelectorAll('.adjust-reset').forEach(btn => {
   btn.onclick = () => {
     const key = btn.dataset.reset;
-    S.adjust[key] = 0;
-    const input = document.getElementById(`adj${key.charAt(0).toUpperCase() + key.slice(1)}`);
-    if(input) input.value = 0;
+    if(!key) return;
+    if(S.items[S.cur]) curAdjust()[key] = 0;
     syncAdvancedPanel();
     draw();
   };
 });
 $('advancedToggle').onclick=()=>{ S.advOpen = !S.advOpen; syncAdvancedPanel(); };
-['Exposure','Contrast','Highlights','Shadows','Saturation','Warmth','Vignette'].forEach(name => {
-  const key = name.charAt(0).toLowerCase() + name.slice(1);
-  const input = document.getElementById(`adj${name}`);
-  if(input){ input.oninput = () => applyAdjustFromInput(key); }
+ADJ_KEYS.forEach(key => {
+  const input = document.getElementById(`adj${key.charAt(0).toUpperCase() + key.slice(1)}`);
+  if(input){ input.oninput = () => applyAdjustFromInput(key); input.onchange = () => drawFrameThumbs(); }
 });
+$('adjSyncAll').onclick=()=>{
+  const src = curAdjust();
+  S.items.forEach(it => { it.adjust = { ...src }; });
+  drawFrameThumbs(); draw();
+  toast(`Đã đồng bộ chỉnh sửa cho ${S.items.length} ảnh / video`);
+};
+$('rotate').oninput=e=>{ const it=S.items[S.cur]; if(!it) return; it.rot=Number(e.target.value); syncRotate(it); draw(); };
+$('rotate').onchange=()=>drawFrameThumbs();
+$('rotateReset').onclick=()=>{ const it=S.items[S.cur]; if(!it) return; it.rot=0; it.rot90=0; syncRotate(it); drawFrameThumbs(); draw(); };
+$('rot90').onclick=()=>{ const it=S.items[S.cur]; if(!it) return; it.rot90=((it.rot90||0)+1)%4; drawFrameThumbs(); draw(); };
 $('safeChk').onchange=e=>{S.safe=e.target.checked; draw();};
 $('syncConnect').onclick=()=>{
   const cfg = {
