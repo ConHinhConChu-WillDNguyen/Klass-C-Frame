@@ -319,10 +319,33 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
       <div class="sec">
         <span class="lbl">Thông tin sản phẩm</span>
         <label class="check"><input type="checkbox" id="infoOn" checked> Hiện khối thông tin trên ảnh</label>
+        <div class="field">
+          <label>Kiểu box thông tin</label>
+          <div class="tones">
+            <button type="button" class="tone" data-info-style="cream" aria-pressed="true"><span class="sw" style="background:#F4EFE6"></span>Trắng sữa</button>
+            <button type="button" class="tone" data-info-style="dark" aria-pressed="false"><span class="sw" style="background:rgba(22,18,16,.7)"></span>Nền tối trong suốt</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Vị trí khối box</label>
+          <div class="pos">
+            <button type="button" data-pos="tl" aria-pressed="true">Trên trái</button>
+            <button type="button" data-pos="tr" aria-pressed="false">Trên phải</button>
+            <button type="button" data-pos="bl" aria-pressed="false">Dưới trái</button>
+            <button type="button" data-pos="br" aria-pressed="false">Dưới phải</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="infoOpacity">Độ mờ box</label>
+          <input type="range" id="infoOpacity" min="0" max="100" value="100">
+        </div>
         <div class="field"><label for="infoTitle">Tên sản phẩm</label><input type="text" id="infoTitle"></div>
         <div class="field"><label for="infoDesc">Mô tả ngắn</label><textarea id="infoDesc" rows="3"></textarea></div>
         <div class="info-rows" id="infoRows"></div>
-        <button class="btn small" type="button" id="infoAdd">+ Thêm dòng</button>
+        <div class="row">
+          <button class="btn small" type="button" id="infoAdd">+ Thêm dòng</button>
+          <button class="btn small primary" type="button" id="infoSyncAll">Đồng bộ cho tất cả ảnh</button>
+        </div>
         <p class="hint">Để trống ô nào thì dòng đó không hiện. Bấm × để xóa hẳn một dòng. Khối tự thu nhỏ chữ nếu nội dung dài, và luôn tránh logo, QR, vùng nút của app.</p>
       </div>
 
@@ -388,6 +411,17 @@ const FORMATS = {
 };
 const DEFAULT_QR_URL='https://klass-c-wear.vercel.app/';
 const DEFAULT_QR='11111110110011110011101111111,10000010110101001110101000001,10111010001100001010101011101,10111010100100110100101011101,10111010011110101111001011101,10000010000111011101001000001,11111110101010101010101111111,00000000101100011101000000000,10110111001111010110001001011,01101001011001110011001110001,00100111100111001000100010110,11110000111000001010010000001,00011010000010110100110101100,11101100000100101101001000111,11110011101111011011110100111,00011101001110101000000010010,11000010100100110010110111010,00010000101010101100100101110,10111111101011111000110010100,00011000001111111100011010100,01000111010001111101111111100,00000000100110000110100011111,11111110110110100011101011010,10000010110101101000100011001,10111010001110011100111110110,10111010100111011101000111001,10111010101100101000000100101,10000010011100110001101101010,11111110101011001011110110010'.split(',').map(r=>Array.from(r).map(c=>c==='1'));
+const defaultInfo = () => ({
+  on: true,
+  pos: 'tl',
+  title: 'Standard Kaki Pants',
+  desc: 'Quần kaki dáng rộng, thiết kế lệch biên tạo điểm nhấn nhẹ, form gọn gàng, dễ mặc và phù hợp sử dụng hằng ngày.',
+  rows: [{label:'Chất liệu', value:'Kaki (65% Cotton, 30% Polyester, 5% Spandex)'},{label:'Màu sắc', value:'Beige | Brown | Cacao'},{label:'Size', value:'M | L | XL | XXL'},{label:'Lưu ý', value:'Màu thực tế có thể chênh nhẹ do ánh sáng khi chụp.'}],
+  dragX: 0,
+  dragY: 0,
+  style: 'cream',
+  opacity: 100
+});
 const FRAMES = [
   {id:'signature',name:'Signature'},
   {id:'editorial',name:'Editorial'},
@@ -414,17 +448,29 @@ const NO_ADJUST = Object.freeze(blankAdjust());
 const S = { plat:'ig', fmt:FORMATS.ig[1], frame:'signature', tone:'cream', filter:'original', filterStrength:100,
   advOpen:false, tagline:'Class with Karacter', handle:'KlassCWear', note:'Made for Good Taste',
   logo:null, logoStyle:'kc-ngang',
-  info:{ on:true, pos:'tl', title:'Standard Kaki Pants',
-    desc:'Quần kaki dáng rộng, thiết kế lệch biên tạo điểm nhấn nhẹ, form gọn gàng, dễ mặc và phù hợp sử dụng hằng ngày.',
-    rows:[ {label:'Chất liệu', value:'Kaki (65% Cotton, 30% Polyester, 5% Spandex)'},
-           {label:'Màu sắc', value:'Beige | Brown | Cacao'},
-           {label:'Size', value:'M | L | XL | XXL'},
-           {label:'Lưu ý', value:'Màu thực tế có thể chênh nhẹ do ánh sáng khi chụp.'} ],
-    dragX:0, dragY:0 },
+  info: defaultInfo(),
   qr:{on:true, url:DEFAULT_QR_URL, matrix:DEFAULT_QR, caption:'Quét để xem thêm', img:null}, safe:false, items:[], cur:0,
   blurLevel:'medium', blurSel:null };
 
 const $ = id => document.getElementById(id);
+function currentInfo(){
+  const item = S.items[S.cur];
+  if(item && !item.info) item.info = defaultInfo();
+  if(item) return item.info;
+  if(!S.info) S.info = defaultInfo();
+  return S.info;
+}
+function syncInfoControls(){
+  const I = currentInfo();
+  if(!I) return;
+  $('infoOn').checked = !!I.on;
+  $('infoTitle').value = I.title || '';
+  $('infoDesc').value = I.desc || '';
+  $('infoOpacity').value = String(Math.max(0, Math.min(100, Number(I.opacity ?? 100))));
+  document.querySelectorAll('[data-info-style]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.infoStyle === I.style)));
+  document.querySelectorAll('[data-pos]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pos === I.pos)));
+  drawInfoRows();
+}
 
 function mediaFromBlob(blob, type, name){
   return new Promise((resolve, reject) => {
@@ -1052,13 +1098,16 @@ function wrapRich(g,segs,maxW){
   if(line.length) lines.push(line); return lines;
 }
 let lastInfoBox = null;
-function infoHasContent(){ const I=S.info; return I.on && (I.title.trim()||I.desc.trim()||I.rows.some(r=>r.value.trim())); }
+function infoHasContent(){ const I=currentInfo(); return !!I && I.on && (String(I.title || '').trim() || String(I.desc || '').trim() || (I.rows || []).some(r => String(r.value || '').trim())); }
 // R = the free rectangle of the frame (no logo, QR or app UI inside); the card sits in the chosen corner of it.
 function drawInfo(g,R,u,tone,preview){
+  const I=currentInfo();
   if(!infoHasContent() || R.w<120*u || R.h<120*u) return;
-  const I=S.info, dark=tone==='ink';
-  const bg = dark? 'rgba(43,33,27,.93)' : 'rgba(244,239,230,.94)';
-  const fg = dark? BRAND.cream : '#141414', fs = dark? 'rgba(239,230,214,.8)' : 'rgba(20,20,20,.78)';
+  const opacity = clamp(Number(I.opacity ?? 100), 0, 100) / 100;
+  const dark = String(I.style || 'cream') === 'dark';
+  const bg = dark ? `rgba(23,19,18,${(0.72 * opacity).toFixed(3)})` : `rgba(244,239,230,${(0.94 * opacity).toFixed(3)})`;
+  const fg = dark ? BRAND.cream : '#141414';
+  const fs = dark ? `rgba(239,230,214,${(0.82 * opacity).toFixed(3)})` : `rgba(20,20,20,${(0.78 * opacity).toFixed(3)})`;
   const rows=I.rows.filter(r=>r.value.trim());
   const build=k=>{
     const pad=34*u*k, w=Math.min(R.w,540*u), inner=w-pad*2, ts=36*u*k, bs=21*u*k, lh=bs*1.5;
@@ -1437,10 +1486,10 @@ function drawLogos(){
     box.append(b);
   });
 }
-function refresh(){ drawStrip(); drawFilters(); drawLogos(); drawFrameThumbs(); syncBlurUi(); syncAdvancedPanel(); draw(); }
+function refresh(){ drawStrip(); drawFilters(); drawLogos(); drawFrameThumbs(); syncBlurUi(); syncAdvancedPanel(); syncInfoControls(); draw(); }
 
 /* ---------- loading images ---------- */
-function sampleItem(){ return {img:makeSample(),name:'mau',zoom:1,px:0,py:0,sample:true,type:'image'}; }
+function sampleItem(){ return {img:makeSample(),name:'mau',zoom:1,px:0,py:0,sample:true,type:'image',info:defaultInfo()}; }
 function loadFiles(files){
   const list=[...files].filter(f=>f.type.startsWith('image/')||f.type.startsWith('video/')); if(!list.length) return;
   if(S.items.length && S.items.every(x=>x.sample)) S.items=[];
@@ -1459,7 +1508,7 @@ function loadFiles(files){
     const add=async (item)=>{ S.items.push(item); await saveMediaRecord(item); finish('ok'); };
     if(file.type.startsWith('image/')){
       const url=URL.createObjectURL(file); const img=new Image();
-      img.onload=()=>add({img,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'image',file});
+      img.onload=()=>add({img,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'image',file,info:defaultInfo()});
       img.onerror=()=>{ finish('fail'); };
       img.src=url;
       return;
@@ -1468,7 +1517,7 @@ function loadFiles(files){
     video.src=url; video.muted=true; video.playsInline=true; video.loop=true; video.preload='auto';
     video.onloadeddata=()=>{
       video.play().catch(()=>{});
-      add({video,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'video',file});
+      add({video,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'video',file,info:defaultInfo()});
     };
     video.onerror=()=>{ finish('fail'); };
     video.load();
@@ -1499,21 +1548,22 @@ cv.addEventListener('pointerdown',e=>{
     return;
   }
   if(S.blurSel){ S.blurSel = null; syncBlurUi(); draw(); }
-  if(S.info.on && lastInfoBox){
+  const I = currentInfo();
+  if(I && I.on && lastInfoBox){
     const closeSize = 30 * (Math.min(cv.width, cv.height) / 1080);
     const closeX = lastInfoBox.x + lastInfoBox.w - closeSize - 10 * (Math.min(cv.width, cv.height) / 1080);
     const closeY = lastInfoBox.y + 10 * (Math.min(cv.width, cv.height) / 1080);
     const inClose = p.x >= closeX && p.x <= closeX + closeSize && p.y >= closeY && p.y <= closeY + closeSize;
     const inBox = p.x >= lastInfoBox.x && p.x <= lastInfoBox.x + lastInfoBox.w && p.y >= lastInfoBox.y && p.y <= lastInfoBox.y + lastInfoBox.h;
     if(inClose){
-      S.info.on = false;
+      I.on = false;
       $('infoOn').checked = false;
       draw();
       return;
     }
     if(inBox){
       cv.setPointerCapture(e.pointerId);
-      infoDrag = { startX:p.x, startY:p.y, startDragX:S.info.dragX || 0, startDragY:S.info.dragY || 0 };
+      infoDrag = { startX:p.x, startY:p.y, startDragX:I.dragX || 0, startDragY:I.dragY || 0 };
       return;
     }
   }
@@ -1551,8 +1601,10 @@ cv.addEventListener('pointermove',e=>{
   }
   if(infoDrag){
     const p = getCanvasPoint(e);
-    S.info.dragX = infoDrag.startDragX + (p.x - infoDrag.startX);
-    S.info.dragY = infoDrag.startDragY + (p.y - infoDrag.startY);
+    const I = currentInfo();
+    if(!I) return;
+    I.dragX = infoDrag.startDragX + (p.x - infoDrag.startX);
+    I.dragY = infoDrag.startDragY + (p.y - infoDrag.startY);
     draw();
     return;
   }
@@ -1590,25 +1642,46 @@ document.querySelectorAll('[data-tone]').forEach(b=>b.onclick=()=>{
 });
 function infoChanged(){ draw(); }
 function drawInfoRows(){
+  const I = currentInfo();
   const box=$('infoRows'); box.innerHTML='';
-  S.info.rows.forEach((r,i)=>{
+  (I?.rows || []).forEach((r,i)=>{
     const d=document.createElement('div'); d.className='info-row';
     const a=document.createElement('input'); a.type='text'; a.className='lab'; a.value=r.label; a.id='infoLab'+i; a.setAttribute('aria-label','Tên dòng '+(i+1)); a.placeholder='Nhãn';
     const b=document.createElement('input'); b.type='text'; b.value=r.value; b.id='infoVal'+i; b.setAttribute('aria-label',(r.label||'Dòng '+(i+1))+' — nội dung'); b.placeholder='Nội dung (để trống để ẩn)';
     const x=document.createElement('button'); x.type='button'; x.className='del'; x.textContent='×'; x.setAttribute('aria-label','Xóa dòng '+(r.label||i+1));
     a.oninput=()=>{r.label=a.value; infoChanged();}; b.oninput=()=>{r.value=b.value; infoChanged();};
-    x.onclick=()=>{ S.info.rows.splice(i,1); drawInfoRows(); infoChanged(); };
+    x.onclick=()=>{ I.rows.splice(i,1); drawInfoRows(); infoChanged(); };
     d.append(a,b,x); box.append(d);
   });
 }
-$('infoTitle').value=S.info.title; $('infoDesc').value=S.info.desc;
-$('infoOn').onchange=e=>{S.info.on=e.target.checked; infoChanged();};
-$('infoTitle').oninput=e=>{S.info.title=e.target.value; infoChanged();};
-$('infoDesc').oninput=e=>{S.info.desc=e.target.value; infoChanged();};
-$('infoAdd').onclick=()=>{ S.info.rows.push({label:'',value:''}); drawInfoRows(); const n=S.info.rows.length-1; $('infoLab'+n).focus(); };
-function drawPos(){ document.querySelectorAll('[data-pos]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.pos===S.info.pos)); }
-document.querySelectorAll('[data-pos]').forEach(b=>b.onclick=()=>{ S.info.pos=b.dataset.pos; drawPos(); infoChanged(); });
-drawInfoRows(); drawPos();
+function applyCurrentInfoForm(){
+  const I = currentInfo();
+  if(!I) return;
+  $('infoTitle').value = I.title || '';
+  $('infoDesc').value = I.desc || '';
+  $('infoOn').checked = !!I.on;
+  document.querySelectorAll('[data-info-style]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.infoStyle === I.style)));
+  document.querySelectorAll('[data-pos]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pos === I.pos)));
+}
+$('infoOn').onchange=e=>{ const I=currentInfo(); if(!I) return; I.on=e.target.checked; infoChanged(); };
+$('infoOpacity').oninput=e=>{ const I=currentInfo(); if(!I) return; I.opacity = Number(e.target.value); infoChanged(); };
+$('infoTitle').oninput=e=>{ const I=currentInfo(); if(!I) return; I.title=e.target.value; infoChanged(); };
+$('infoDesc').oninput=e=>{ const I=currentInfo(); if(!I) return; I.desc=e.target.value; infoChanged(); };
+$('infoAdd').onclick=()=>{ const I=currentInfo(); if(!I) return; I.rows.push({label:'',value:''}); drawInfoRows(); const n=I.rows.length-1; $('infoLab'+n).focus(); };
+$('infoSyncAll').onclick=()=>{
+  const src = currentInfo();
+  if(!src) return;
+  const snapshot = { ...src, rows: src.rows.map(r => ({ ...r })), style: src.style || 'cream' };
+  S.items.forEach(item => { item.info = JSON.parse(JSON.stringify(snapshot)); });
+  S.info = JSON.parse(JSON.stringify(snapshot));
+  syncInfoControls();
+  draw();
+  toast(`Đã đồng bộ box thông tin cho ${S.items.length} ảnh`);
+};
+function drawPos(){ document.querySelectorAll('[data-pos]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.pos === currentInfo()?.pos))); }
+document.querySelectorAll('[data-pos]').forEach(b=>b.onclick=()=>{ const I=currentInfo(); if(!I) return; I.pos=b.dataset.pos; drawPos(); infoChanged(); });
+document.querySelectorAll('[data-info-style]').forEach(b=>b.onclick=()=>{ const I=currentInfo(); if(!I) return; I.style=b.dataset.infoStyle; applyCurrentInfoForm(); infoChanged(); });
+drawInfoRows(); drawPos(); applyCurrentInfoForm();
 function drawQRPrev(){ const c=$('qrPrev'), g=c.getContext('2d'); g.clearRect(0,0,160,160); drawQR(g,0,0,160); }
 function qrChanged(){ drawQRPrev(); drawFrameThumbs(); draw(); }
 $('qrOn').onchange=e=>{S.qr.on=e.target.checked; qrChanged();};
