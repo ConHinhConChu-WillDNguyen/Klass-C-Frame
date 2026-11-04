@@ -453,14 +453,8 @@ const FRAMES = [
 ];
 const FILTERS = [
   {id:'original', name:'Nguyên bản', css:'none', swatch:'linear-gradient(135deg,#f7f0ea,#d7cfc4)', tint:'#ffffff', alpha:0},
-  {id:'portra', name:'Kodak Portra 400', css:'sepia(.16) saturate(1.2)', swatch:'linear-gradient(135deg,#d8b08b,#6d5a4e)', tint:'#c97d5d', alpha:.22},
-  {id:'gold', name:'Kodak Gold 200', css:'sepia(.22) saturate(1.4) hue-rotate(-8deg)', swatch:'linear-gradient(135deg,#f7d19d,#d65b36)', tint:'#d9a25c', alpha:.24},
-  {id:'ektar', name:'Kodak Ektar 100', css:'saturate(1.28) sepia(.12)', swatch:'linear-gradient(135deg,#dfe9c4,#8a8a59)', tint:'#a9b57b', alpha:.2},
-  {id:'pro400h', name:'Fuji Pro 400H', css:'saturate(1.18) hue-rotate(-10deg)', swatch:'linear-gradient(135deg,#f5d4b1,#8b6f5e)', tint:'#b77d5e', alpha:.2},
-  {id:'velvia', name:'Fuji Velvia', css:'saturate(1.5) hue-rotate(-8deg)', swatch:'linear-gradient(135deg,#3e7d7b,#e97339)', tint:'#2d6d7d', alpha:.26},
-  {id:'classic', name:'Classic Chrome', css:'saturate(.9) sepia(.08)', swatch:'linear-gradient(135deg,#d5d9d1,#6b5c51)', tint:'#73827b', alpha:.18},
-  {id:'bright', name:'Sáng hiện đại', css:'saturate(1.16)', swatch:'linear-gradient(135deg,#fff9f3,#d0e7ea)', tint:'#f9efe6', alpha:.12},
-  {id:'minimal', name:'Tối giản', css:'grayscale(.12) saturate(.8)', swatch:'linear-gradient(135deg,#dfe4e2,#5c5d5d)', tint:'#404040', alpha:.16}
+  {id:'kodak', name:'Kodak', css:'sepia(.18) saturate(1.2)', swatch:'linear-gradient(135deg,#d8b08b,#6d5a4e)', tint:'#c97d5d', alpha:.22},
+  {id:'fuji', name:'Fuji', css:'saturate(1.22) hue-rotate(-10deg)', swatch:'linear-gradient(135deg,#f5d4b1,#8b6f5e)', tint:'#b77d5e', alpha:.2}
 ];
 
 const MEDIA_STORAGE_KEY = 'klassc-frame-studio-media-v1';
@@ -1165,6 +1159,12 @@ function drawInfo(g,R,u,tone,preview){
 }
 
 /* ---------- frames ---------- */
+function renderPreview(g,W,H,item,fmt,frame,tone){
+  return render(g,W,H,item,fmt,frame,tone,true,{ previewMode:'preview' });
+}
+function renderExport(g,W,H,item,fmt,frame,tone){
+  return render(g,W,H,item,fmt,frame,tone,false,{ previewMode:'export' });
+}
 function render(g,W,H,item,fmt,frame,tone,preview,opts={}){
   const u=Math.min(W,H)/1080, sf=fmt.safe||{}, st=(sf.t||0)*H, sb=(sf.b||0)*H;
   const fill = tone==='ink'? BRAND.ink : BRAND.cream;
@@ -1289,6 +1289,8 @@ function getCanvasPoint(e){
 
 /* ---------- preview ---------- */
 let raf=0;
+let lastRenderAt = 0;
+let drawQueued = false;
 // Canvas pixels per CSS pixel, so handles stay finger-sized however small the preview is shown.
 function uiScale(){ const r=cv.getBoundingClientRect(); return r.width? cv.width/r.width : 1; }
 function blurHandles(r,k){
@@ -1392,15 +1394,35 @@ function syncZoomLength(){
   if(parseFloat(stage.style.getPropertyValue('--zoom-len')) !== len){ stage.style.setProperty('--zoom-len', `${len}px`); syncZoomReadout(); }
 }
 window.addEventListener('resize', syncZoomLength);
-function draw(){ cancelAnimationFrame(raf); raf=requestAnimationFrame(()=>{
-  const it=S.items[S.cur]; if(!it) return;
-  const f=getItemFormat(it);
-  if(cv.width!==f.w||cv.height!==f.h){cv.width=f.w;cv.height=f.h;}
-  lastGeom=render(ctx,f.w,f.h,it,f,S.frame,S.tone,true);
-  drawBlurOverlay(it);
-  $('mDim').textContent=`${f.w} × ${f.h}`; $('mRatio').textContent=f.ratio;
-  $('sampleBadge').hidden=!it.sample;
-  $('zoom').value=Math.round(it.zoom*100); syncZoomLength(); syncZoomReadout(); syncRotate(it); if(it.type === 'video' && it.video && it.video.readyState >= 2){ requestAnimationFrame(draw); }});}
+function draw(){
+  const now = performance.now();
+  const activeInteraction = !!drag || !!blurDrag || !!infoDrag;
+  const minGap = activeInteraction ? 16 : 30;
+
+  if (now - lastRenderAt < minGap && !drawQueued) {
+    drawQueued = true;
+    const wait = Math.max(0, minGap - (now - lastRenderAt));
+    setTimeout(() => {
+      drawQueued = false;
+      draw();
+    }, wait);
+    return;
+  }
+
+  drawQueued = false;
+  lastRenderAt = now;
+  cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(() => {
+    const it=S.items[S.cur]; if(!it) return;
+    const f=getItemFormat(it);
+    if(cv.width!==f.w||cv.height!==f.h){cv.width=f.w;cv.height=f.h;}
+    lastGeom=renderPreview(ctx,f.w,f.h,it,f,S.frame,S.tone);
+    drawBlurOverlay(it);
+    $('mDim').textContent=`${f.w} × ${f.h}`; $('mRatio').textContent=f.ratio;
+    $('sampleBadge').hidden=!it.sample;
+    $('zoom').value=Math.round(it.zoom*100); syncZoomLength(); syncZoomReadout(); syncRotate(it); if(it.type === 'video' && it.video && it.video.readyState >= 2){ requestAnimationFrame(draw); }
+  });
+}
 
 function syncFilterStrength(){
   const strength = clamp(S.filterStrength, 0, 100);
@@ -1847,7 +1869,7 @@ function exportVideo(it,onProgress){
     }
     if(!src){ v.muted = true; silent = true; }
     const item = { ...it, video:v };
-    const paint = () => { if(v.readyState >= 2) render(g,f.w,f.h,item,f,S.frame,S.tone,false); };
+    const paint = () => { if(v.readyState >= 2) renderExport(g,f.w,f.h,item,f,S.frame,S.tone); };
     const rec = new MediaRecorder(stream, { mimeType:mime, videoBitsPerSecond:10000000, audioBitsPerSecond:192000 });
     const chunks = []; rec.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
     let raf = 0, done = false;
@@ -1888,7 +1910,7 @@ async function exportBlob(it,onProgress){
   return new Promise(res => {
     const f = getItemFormat(it);
     const c = document.createElement('canvas'); c.width=f.w; c.height=f.h;
-    render(c.getContext('2d'), f.w, f.h, it, f, S.frame, S.tone, false);
+    renderExport(c.getContext('2d'), f.w, f.h, it, f, S.frame, S.tone);
     c.toBlob(b => res({ blob: b, canvas: c, type: 'image', ext: 'jpg' }), 'image/jpeg', 0.93);
   });
 }
