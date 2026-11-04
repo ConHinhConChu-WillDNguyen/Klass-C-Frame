@@ -259,6 +259,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
       </div>
 
       <details class="mini-section">
+        <summary>Tỉ lệ ảnh</summary>
+        <div class="mini-content">
+          <div class="sizes" id="itemSizes"></div>
+          <p class="hint">Tỉ lệ này áp dụng cho ảnh/video đang chọn; không ảnh hưởng tới “Nền tảng” đang chọn cho cả bộ.</p>
+        </div>
+      </details>
+
+      <details class="mini-section">
         <summary>Bộ lọc màu</summary>
         <div class="mini-content">
           <div class="filter-grid" id="filters"></div>
@@ -409,6 +417,22 @@ const FORMATS = {
   tt:[{id:'tt-v',label:'Video / ảnh toàn màn hình',ratio:'9:16',w:1080,h:1920,safe:{t:.09,b:.25,r:.14}},
       {id:'tt-c',label:'Ảnh carousel',ratio:'3:4',w:1080,h:1440,safe:{b:.08}}]
 };
+const ALL_FORMATS = Object.values(FORMATS).flat();
+function findFormatById(id){ return ALL_FORMATS.find(f => f.id === id) || S.fmt; }
+function getItemFormat(item){
+  if(item && item.formatId){
+    const match = findFormatById(item.formatId);
+    if(match) return match;
+  }
+  return S.fmt;
+}
+function setCurrentItemFormat(fmt){
+  const item = S.items[S.cur];
+  if(!item) return;
+  item.formatId = fmt.id;
+  drawItemSizes();
+  draw();
+}
 const DEFAULT_QR_URL='https://klass-c-wear.vercel.app/';
 const DEFAULT_QR='11111110110011110011101111111,10000010110101001110101000001,10111010001100001010101011101,10111010100100110100101011101,10111010011110101111001011101,10000010000111011101001000001,11111110101010101010101111111,00000000101100011101000000000,10110111001111010110001001011,01101001011001110011001110001,00100111100111001000100010110,11110000111000001010010000001,00011010000010110100110101100,11101100000100101101001000111,11110011101111011011110100111,00011101001110101000000010010,11000010100100110010110111010,00010000101010101100100101110,10111111101011111000110010100,00011000001111111100011010100,01000111010001111101111111100,00000000100110000110100011111,11111110110110100011101011010,10000010110101101000100011001,10111010001110011100111110110,10111010100111011101000111001,10111010101100101000000100101,10000010011100110001101101010,11111110101011001011110110010'.split(',').map(r=>Array.from(r).map(c=>c==='1'));
 const defaultInfo = () => ({
@@ -1369,8 +1393,9 @@ function syncZoomLength(){
 }
 window.addEventListener('resize', syncZoomLength);
 function draw(){ cancelAnimationFrame(raf); raf=requestAnimationFrame(()=>{
-  const f=S.fmt; if(cv.width!==f.w||cv.height!==f.h){cv.width=f.w;cv.height=f.h;}
   const it=S.items[S.cur]; if(!it) return;
+  const f=getItemFormat(it);
+  if(cv.width!==f.w||cv.height!==f.h){cv.width=f.w;cv.height=f.h;}
   lastGeom=render(ctx,f.w,f.h,it,f,S.frame,S.tone,true);
   drawBlurOverlay(it);
   $('mDim').textContent=`${f.w} × ${f.h}`; $('mRatio').textContent=f.ratio;
@@ -1430,7 +1455,7 @@ function drawFrameThumbs(){
   FRAMES.forEach(fr=>{
     const b=document.createElement('button'); b.type='button'; b.className='frame'; b.setAttribute('aria-pressed',S.frame===fr.id);
     const c=document.createElement('canvas'); c.width=f.w; c.height=f.h;
-    if(it) render(c.getContext('2d'),f.w,f.h,{...it,zoom:1,px:0,py:0},{w:400,h:500},fr.id,S.tone,false,{noInfo:true});
+    if(it) render(c.getContext('2d'),f.w,f.h,{...it,zoom:1,px:0,py:0}, getItemFormat(it), fr.id,S.tone,false,{noInfo:true});
     b.append(c,document.createTextNode(fr.name));
     b.onclick=()=>{S.frame=fr.id; drawFrameThumbs(); draw();};
     box.append(b);
@@ -1444,6 +1469,19 @@ function drawSizes(){
     const k=22/Math.max(f.w,f.h);
     b.innerHTML=`<span class="ico"><i style="width:${Math.round(f.w*k)}px;height:${Math.round(f.h*k)}px"></i></span><span class="t">${f.label}</span><span class="d">${f.ratio} · ${f.w}×${f.h}</span>`;
     b.onclick=()=>{S.fmt=f; drawSizes(); draw();};
+    box.append(b);
+  });
+}
+
+function drawItemSizes(){
+  const box=$('itemSizes'); if(!box) return;
+  const active = getItemFormat(S.items[S.cur]);
+  box.innerHTML='';
+  ALL_FORMATS.forEach(f=>{
+    const b=document.createElement('button'); b.type='button'; b.className='size'; b.setAttribute('aria-pressed', active && active.id === f.id);
+    const k=22/Math.max(f.w,f.h);
+    b.innerHTML=`<span class="ico"><i style="width:${Math.round(f.w*k)}px;height:${Math.round(f.h*k)}px"></i></span><span class="t">${f.label}</span><span class="d">${f.ratio} · ${f.w}×${f.h}</span>`;
+    b.onclick=()=>{setCurrentItemFormat(f);};
     box.append(b);
   });
 }
@@ -1486,10 +1524,10 @@ function drawLogos(){
     box.append(b);
   });
 }
-function refresh(){ drawStrip(); drawFilters(); drawLogos(); drawFrameThumbs(); syncBlurUi(); syncAdvancedPanel(); syncInfoControls(); draw(); }
+function refresh(){ drawStrip(); drawFilters(); drawLogos(); drawFrameThumbs(); drawItemSizes(); syncBlurUi(); syncAdvancedPanel(); syncInfoControls(); draw(); }
 
 /* ---------- loading images ---------- */
-function sampleItem(){ return {img:makeSample(),name:'mau',zoom:1,px:0,py:0,sample:true,type:'image',info:defaultInfo()}; }
+function sampleItem(){ return {img:makeSample(),name:'mau',zoom:1,px:0,py:0,sample:true,type:'image',info:defaultInfo(),formatId:S.fmt.id}; }
 function loadFiles(files){
   const list=[...files].filter(f=>f.type.startsWith('image/')||f.type.startsWith('video/')); if(!list.length) return;
   if(S.items.length && S.items.every(x=>x.sample)) S.items=[];
@@ -1505,10 +1543,10 @@ function loadFiles(files){
     }
   };
   list.forEach(async file=>{
-    const add=async (item)=>{ S.items.push(item); await saveMediaRecord(item); finish('ok'); };
+    const add=async (item)=>{ item.formatId = S.fmt.id; S.items.push(item); await saveMediaRecord(item); finish('ok'); };
     if(file.type.startsWith('image/')){
       const url=URL.createObjectURL(file); const img=new Image();
-      img.onload=()=>add({img,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'image',file,info:defaultInfo()});
+      img.onload=()=>add({img,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'image',file,info:defaultInfo(),formatId:S.fmt.id});
       img.onerror=()=>{ finish('fail'); };
       img.src=url;
       return;
@@ -1517,7 +1555,7 @@ function loadFiles(files){
     video.src=url; video.muted=true; video.playsInline=true; video.loop=true; video.preload='auto';
     video.onloadeddata=()=>{
       video.play().catch(()=>{});
-      add({video,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'video',file,info:defaultInfo()});
+      add({video,name:file.name.replace(/\.[^.]+$/,''),zoom:1,px:0,py:0,type:'video',file,info:defaultInfo(),formatId:S.fmt.id});
     };
     video.onerror=()=>{ finish('fail'); };
     video.load();
@@ -1775,8 +1813,9 @@ $('logoDl').onclick=async()=>{
 /* ---------- export ---------- */
 function extFromName(name, fallback='jpg'){ const n=(name||'').toLowerCase(); const m=n.match(/\.(mp4|mov|webm|m4v|avi|mpeg|gif)$/); return m ? m[1] : fallback; }
 function mediaName(it,i,ext){
+  const fmt = getItemFormat(it);
   ext = ext || (it.type === 'video' ? extFromName(it.file?.name || it.name || 'video.mp4', 'mp4') : 'jpg');
-  return `klassc_${S.fmt.id}_${S.frame}_${String(i+1).padStart(2,'0')}.${ext}`;
+  return `klassc_${fmt.id}_${S.frame}_${String(i+1).padStart(2,'0')}.${ext}`;
 }
 // MP4 first (Safari, recent Chrome/Edge), WebM where MP4 recording is unavailable (Firefox, older Chrome).
 const VIDEO_MIMES = ['video/mp4;codecs=avc1.640028,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2','video/mp4',
@@ -1794,7 +1833,7 @@ function primeAudio(){
 // and records the canvas together with the original sound.
 function exportVideo(it,onProgress){
   return new Promise((resolve,reject)=>{
-    const mime = pickVideoMime(), f = S.fmt;
+    const mime = pickVideoMime(), f = getItemFormat(it);
     const c = document.createElement('canvas'); c.width = f.w; c.height = f.h; const g = c.getContext('2d');
     const url = URL.createObjectURL(it.file);
     const v = document.createElement('video'); v.src = url; v.playsInline = true; v.preload = 'auto'; v.loop = false;
@@ -1846,8 +1885,12 @@ async function exportBlob(it,onProgress){
     if(out.silent) toast('Trình duyệt chặn tiếng nên video xuất ra không có âm thanh');
     return { blob:out.blob, canvas:null, type:'video', ext:out.ext };
   }
-  return new Promise(res=>{ const f=S.fmt; const c=document.createElement('canvas'); c.width=f.w; c.height=f.h;
-    render(c.getContext('2d'),f.w,f.h,it,f,S.frame,S.tone,false); c.toBlob(b=>res({blob:b,canvas:c,type:'image',ext:'jpg'}),'image/jpeg',0.93); });
+  return new Promise(res => {
+    const f = getItemFormat(it);
+    const c = document.createElement('canvas'); c.width=f.w; c.height=f.h;
+    render(c.getContext('2d'), f.w, f.h, it, f, S.frame, S.tone, false);
+    c.toBlob(b => res({ blob: b, canvas: c, type: 'image', ext: 'jpg' }), 'image/jpeg', 0.93);
+  });
 }
 let downloads=null;
 async function save(filename,data){
